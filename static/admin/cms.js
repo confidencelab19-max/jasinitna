@@ -38,6 +38,11 @@ function setStatus(message, type = "") {
   els.saveState.className = `cms-state${type ? ` is-${type}` : ""}`;
 }
 
+function setMode(mode) {
+  document.body.classList.remove("cms-booting", "is-login", "is-authenticated");
+  document.body.classList.add(mode);
+}
+
 async function api(path, options = {}) {
   const response = await fetch(path, {
     credentials: "same-origin",
@@ -252,7 +257,7 @@ function showEditor() {
   els.editorPanel.hidden = false;
   els.logoutButton.hidden = false;
   els.saveButton.hidden = false;
-  document.body.classList.add("is-authenticated");
+  setMode("is-authenticated");
 }
 
 function showLogin() {
@@ -260,7 +265,12 @@ function showLogin() {
   els.editorPanel.hidden = true;
   els.logoutButton.hidden = true;
   els.saveButton.hidden = true;
-  document.body.classList.remove("is-authenticated");
+  setMode("is-login");
+  state.documents = [];
+  state.activePath = "";
+  state.activeSha = "";
+  state.dirty = false;
+  els.documentList.innerHTML = "";
   els.currentTitle.textContent = "로그인이 필요합니다";
   els.currentPath.textContent = "마스터 계정으로 접속하면 문서를 수정할 수 있어요.";
 }
@@ -376,6 +386,8 @@ async function login(event) {
   event.preventDefault();
   els.loginError.textContent = "";
   setStatus("로그인 중");
+  const submitButton = els.loginForm.querySelector("button[type='submit']");
+  submitButton.disabled = true;
   try {
     await api("/api/cms/login", {
       method: "POST",
@@ -387,6 +399,8 @@ async function login(event) {
   } catch (error) {
     els.loginError.textContent = error.message;
     setStatus("로그인 실패", "error");
+  } finally {
+    submitButton.disabled = false;
   }
 }
 

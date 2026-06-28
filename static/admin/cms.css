@@ -39,9 +39,45 @@ button {
   cursor: pointer;
 }
 
+[hidden] {
+  display: none !important;
+}
+
+body.cms-booting::before {
+  content: "관리자 화면을 확인하고 있어요";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+body.cms-booting .cms-shell {
+  visibility: hidden;
+}
+
 .cms-shell {
   display: grid;
   grid-template-columns: 360px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+body.is-login .cms-shell {
+  display: block;
+  min-height: 100vh;
+}
+
+body.is-login .cms-sidebar,
+body.is-login .cms-topbar,
+body.is-login #editor-panel {
+  display: none !important;
+}
+
+body.is-login .cms-main {
   min-height: 100vh;
 }
 
@@ -230,11 +266,6 @@ button {
   min-height: calc(100vh - 74px);
   place-items: center;
   padding: 28px;
-}
-
-body:not(.is-authenticated) .cms-sidebar {
-  opacity: 0.35;
-  pointer-events: none;
 }
 
 .cms-login-card {
