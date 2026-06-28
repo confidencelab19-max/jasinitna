@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>자신있나 가이드 관리자</title>
+    <link rel="stylesheet" href="/admin/cms.css" />
+  </head>
+  <body>
+    <div id="app" class="cms-shell">
+      <aside class="cms-sidebar" aria-label="문서 목록">
+        <div class="cms-brand">
+          <img src="/img/logo.svg" alt="자신있나" />
+          <strong>파트너 가이드 관리자</strong>
+        </div>
+        <button id="new-doc-button" class="cms-primary" type="button">새 문서</button>
+        <label class="cms-search">
+          <span>문서 검색</span>
+          <input id="search-input" type="search" placeholder="제목, 경로, 내용 검색" autocomplete="off" />
+        </label>
+        <nav id="document-list" class="cms-doc-list"></nav>
+      </aside>
+
+      <main class="cms-main">
+        <header class="cms-topbar">
+          <div>
+            <strong id="current-title">로그인이 필요합니다</strong>
+            <span id="current-path">마스터 계정으로 접속하면 문서를 수정할 수 있어요.</span>
+          </div>
+          <div class="cms-actions">
+            <span id="save-state" class="cms-state">대기 중</span>
+            <button id="logout-button" class="cms-secondary" type="button" hidden>로그아웃</button>
+            <button id="save-button" class="cms-primary" type="button" hidden>저장</button>
+          </div>
+        </header>
+
+        <section id="login-panel" class="cms-login" aria-label="관리자 로그인">
+          <form id="login-form" class="cms-login-card">
+            <img src="/img/logo.svg" alt="자신있나" />
+            <h1>관리자 로그인</h1>
+            <p>문서 수정은 허가된 담당자만 할 수 있어요.</p>
+            <label>
+              <span>아이디</span>
+              <input id="login-id" name="id" autocomplete="username" required />
+            </label>
+            <label>
+              <span>비밀번호</span>
+              <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+            </label>
+            <button class="cms-primary" type="submit">로그인</button>
+            <p id="login-error" class="cms-error" role="alert"></p>
+          </form>
+        </section>
+
+        <section id="editor-panel" class="cms-editor" hidden>
+          <div class="cms-editor-fields">
+            <label>
+              <span>문서 경로</span>
+              <input id="path-input" placeholder="docs/start/example.md" />
+            </label>
+            <label>
+              <span>커밋 메시지</span>
+              <input id="message-input" placeholder="가이드 문서 수정" />
+            </label>
+          </div>
+          <textarea id="content-input" spellcheck="false" aria-label="문서 내용"></textarea>
+        </section>
+      </main>
+    </div>
+
+    <script src="/admin/cms.js"></script>
+  </body>
+</html>

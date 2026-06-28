@@ -1,0 +1,397 @@
+{
+  "banners": [
+    {
+      "image": "/img/social-card.png",
+      "title": "자신있나 파트너 가이드",
+      "description": "입점 후 병원 정보, 이벤트, 광고, 상담, 예약을 어떤 순서로 관리해야 하는지 확인할 수 있어요.",
+      "searchPlaceholder": "병원 정보, 이벤트 검수, 상담 관리, 광고 잔고 검색",
+      "buttonText": "입점 첫날 가이드",
+      "buttonLink": "/docs/start/first-day"
+    }
+  ],
+  "workflow": [
+    {
+      "title": "광고 운영",
+      "description": "광고잔고, 일예산, 랜딩 이벤트 상태를 확인해요."
+    },
+    {
+      "title": "상담 접수",
+      "description": "전화, 채팅, 콜백 요청을 모아 미응답 문의를 먼저 처리해요."
+    },
+    {
+      "title": "예약 관리",
+      "description": "예약 확정, 변경, 취소, 방문완료 상태를 상담팀이 함께 확인해요."
+    },
+    {
+      "title": "성과 확인",
+      "description": "상세조회, 상담수, 예약수, 잔고 소진 속도로 다음 집행을 판단해요."
+    }
+  ],
+  "principles": [
+    "상담과 예약 자체에는 추가 광고비가 붙지 않는 구조를 명확히 안내해요.",
+    "광고비 사용과 상담·예약 현황을 함께 확인해요.",
+    "파트너 화면에는 병원이 실제 운영 흐름으로 이해할 수 있는 상담수와 예약수 흐름을 먼저 보여줘요."
+  ],
+  "categories": [
+    {
+      "title": "한눈에 보는 사용법",
+      "description": "입점 후 병원이 가장 먼저 해야 할 설정과 운영 흐름을 안내해요.",
+      "link": "/docs/start/first-day",
+      "icon": "start",
+      "guideCount": 4
+    },
+    {
+      "title": "병원·의사 관리",
+      "description": "병원 프로필, 의사 정보, 진료시간, 이미지 등록 기준을 안내해요.",
+      "link": "/docs/hospital/hospital-profile",
+      "icon": "hospital",
+      "guideCount": 5
+    },
+    {
+      "title": "이벤트 관리",
+      "description": "이벤트 등록, 의료광고 검수, 가격·옵션, 이미지, 성과 개선 방법을 안내해요.",
+      "link": "/docs/events/create",
+      "icon": "events",
+      "guideCount": 7
+    },
+    {
+      "title": "광고 관리",
+      "description": "광고 상품, 신청 절차, 지역·예산 설정, 광고 리포트 확인 방법을 안내해요.",
+      "link": "/docs/ads/products",
+      "icon": "ads",
+      "guideCount": 5
+    },
+    {
+      "title": "고객 관리",
+      "description": "전화상담, 채팅상담, 상담 상태, 후기 답글과 환자정보 보호 기준을 안내해요.",
+      "link": "/docs/customers/phone",
+      "icon": "customers",
+      "guideCount": 8
+    },
+    {
+      "title": "예약 관리",
+      "description": "앱예약 접수, 가능 시간 설정, 변경·취소, 휴진, 노쇼, 내원완료 처리 기준을 안내해요.",
+      "link": "/docs/appointments/overview",
+      "icon": "appointments",
+      "guideCount": 6
+    },
+    {
+      "title": "충전·환불 관리",
+      "description": "광고비 충전, 무료·유료 포인트, 환불·보상, 세금계산서 기준을 안내해요.",
+      "link": "/docs/payments/charge",
+      "icon": "payments",
+      "guideCount": 3
+    },
+    {
+      "title": "운영 정책·의료광고",
+      "description": "의료광고, 환자정보, 금지 행동, 운영 제한 기준을 안내해요.",
+      "link": "/docs/policy/medical-ad-law",
+      "icon": "policy",
+      "guideCount": 8
+    },
+    {
+      "title": "FAQ",
+      "description": "병원에서 자주 묻는 질문을 모았어요.",
+      "link": "/docs/faq/overview",
+      "icon": "faq",
+      "guideCount": 1
+    },
+    {
+      "title": "용어 사전",
+      "description": "자신있나 운영과 광고에서 자주 쓰는 용어를 정리했어요.",
+      "link": "/docs/glossary/overview",
+      "icon": "glossary",
+      "guideCount": 1
+    }
+  ],
+  "guides": [
+    {
+      "title": "입점 후 첫날 해야 할 일",
+      "description": "자신있나는 성인 남성 전용 비뇨기과·남성수술 플랫폼이에요. 병원은 파트너센터에서 병원 정보, 이벤트, 상담, 예약, 광고, 후기 답글을 운영할 수 있어요.",
+      "category": "한눈에 보는 사용법",
+      "link": "/docs/start/first-day"
+    },
+    {
+      "title": "자신있나 운영 흐름 이해하기",
+      "description": "자신있나 운영은 크게 6단계로 보면 쉬워요.",
+      "category": "한눈에 보는 사용법",
+      "link": "/docs/start/workflow"
+    },
+    {
+      "title": "파트너센터 화면별 사용법",
+      "description": "파트너센터는 병원이 매일 운영하는 화면을 업무별로 나눠 보여줘요. 처음에는 메뉴 이름보다 “무슨 일을 처리하는 화면인지” 기준으로 보면 쉬워요.",
+      "category": "한눈에 보는 사용법",
+      "link": "/docs/start/partner-center-map"
+    },
+    {
+      "title": "매일 확인하는 운영 루틴",
+      "description": "자신있나 운영은 하루에 오래 붙잡고 보는 것보다, 정해진 시간에 꼭 필요한 항목을 빠르게 확인하는 방식이 좋아요.",
+      "category": "한눈에 보는 사용법",
+      "link": "/docs/start/daily-routine"
+    },
+    {
+      "title": "병원 프로필 등록·수정 가이드",
+      "description": "병원 프로필은 환자가 상담을 신청하기 전에 확인하는 기본 정보예요. 정보가 오래되면 상담 취소와 예약 이탈이 생길 수 있어요.",
+      "category": "병원·의사 관리",
+      "link": "/docs/hospital/hospital-profile"
+    },
+    {
+      "title": "의사 정보 관리 가이드",
+      "description": "의사 정보는 환자의 신뢰와 의료광고 기준에 직접 연결돼요. 실제 재직 정보와 다르게 운영하면 안 돼요.",
+      "category": "병원·의사 관리",
+      "link": "/docs/hospital/doctor-profile"
+    },
+    {
+      "title": "병원 이미지 등록 기준",
+      "description": "병원 이미지는 환자가 병원 분위기와 신뢰도를 판단하는 자료예요. 선정적이거나 의료광고 기준에 맞지 않는 이미지는 사용할 수 없어요.",
+      "category": "병원·의사 관리",
+      "link": "/docs/hospital/images"
+    },
+    {
+      "title": "담당자 계정과 권한 관리",
+      "description": "파트너센터는 병원 정보, 이벤트, 상담, 예약, 광고비를 다루는 운영 화면이에요. 모든 직원이 같은 권한을 가지면 실수나 개인정보 노출 위험이 커질 수 있어요.",
+      "category": "병원·의사 관리",
+      "link": "/docs/hospital/staff-account"
+    },
+    {
+      "title": "알림 수신과 연락 담당자 설정",
+      "description": "검수 반려, 광고잔고 부족, 새 상담, 예약 요청은 담당자가 빨리 확인해야 해요. 알림을 받을 사람과 처리할 사람을 병원 내부에서 나눠두면 누락을 줄일 수 있어요.",
+      "category": "병원·의사 관리",
+      "link": "/docs/hospital/notification-contact"
+    },
+    {
+      "title": "이벤트 등록 방법",
+      "description": "이벤트는 자신있나에서 환자가 가장 많이 비교하는 콘텐츠예요. 등록 후 바로 노출되는 것이 아니라, 자신있나 검수 후 승인된 이벤트만 노출돼요.",
+      "category": "이벤트 관리",
+      "link": "/docs/events/create"
+    },
+    {
+      "title": "이벤트 제작·의료광고 준수 가이드",
+      "description": "이벤트는 의료광고 기준을 지켜야 노출될 수 있어요. 자신있나는 환자 오인 가능성이 있는 문구와 이미지를 검수해요.",
+      "category": "이벤트 관리",
+      "link": "/docs/events/medical-review"
+    },
+    {
+      "title": "이벤트 상태값과 노출 기준",
+      "description": "이벤트는 등록, 검수, 승인, 반려, 수정, 종료 상태를 지나며 노출 여부가 달라져요. 병원 담당자는 상태값을 보고 지금 해야 할 일을 바로 판단할 수 있어야 해요.",
+      "category": "이벤트 관리",
+      "link": "/docs/events/event-status"
+    },
+    {
+      "title": "이벤트 수정·중지·재노출 가이드",
+      "description": "이벤트는 운영 중에도 가격, 이미지, 기간, 옵션을 바꿀 수 있어요. 다만 환자에게 보이는 정보가 바뀌는 수정은 다시 확인이 필요할 수 있어요.",
+      "category": "이벤트 관리",
+      "link": "/docs/events/edit-publish"
+    },
+    {
+      "title": "가격·옵션·VAT 작성 가이드",
+      "description": "남성수술 이벤트는 개인 상태, 재료, 옵션, 마취, 사후관리 여부에 따라 최종 비용이 달라질 수 있어요. 가격 정보는 환자가 오해하지 않도록 충분히 구체적으로 적어 주세요.",
+      "category": "이벤트 관리",
+      "link": "/docs/events/price-option"
+    },
+    {
+      "title": "이벤트 카테고리 선택 기준",
+      "description": "카테고리는 이벤트 노출 위치와 광고 과금 기준에 영향을 줄 수 있어요. 실제 수술 내용과 가장 가까운 카테고리를 선택해 주세요.",
+      "category": "이벤트 관리",
+      "link": "/docs/events/category"
+    },
+    {
+      "title": "이벤트 성과를 높이는 운영 방법",
+      "description": "이벤트 성과는 가격만으로 결정되지 않아요. 환자가 앱에서 본 내용과 상담에서 듣는 내용이 일치해야 전환율이 안정적으로 올라가요.",
+      "category": "이벤트 관리",
+      "link": "/docs/events/performance"
+    },
+    {
+      "title": "광고 상품 안내",
+      "description": "자신있나 광고는 병원이 원하는 노출 목적에 따라 상품을 선택해 운영할 수 있어요.",
+      "category": "광고 관리",
+      "link": "/docs/ads/products"
+    },
+    {
+      "title": "광고 신청 전 확인사항",
+      "description": "광고는 신청만 하면 바로 노출되는 것이 아니에요. 광고 소재, 랜딩 이벤트, 광고잔고, 지역, 예산을 확인한 뒤 승인돼요.",
+      "category": "광고 관리",
+      "link": "/docs/ads/apply"
+    },
+    {
+      "title": "광고잔고·포인트·일예산 관리",
+      "description": "광고잔고는 유료 충전 포인트와 무료 지급 포인트로 나뉘어요.",
+      "category": "광고 관리",
+      "link": "/docs/ads/budget"
+    },
+    {
+      "title": "광고 지역·대상 설정 기준",
+      "description": "모든 유료 광고는 지역 설정을 기준으로 노출돼요.",
+      "category": "광고 관리",
+      "link": "/docs/ads/targeting"
+    },
+    {
+      "title": "광고 리포트 확인 방법",
+      "description": "광고 리포트는 사용금액만 보는 화면이 아니에요. 어떤 광고가 상담과 예약으로 이어졌는지 확인하는 기준이에요.",
+      "category": "광고 관리",
+      "link": "/docs/ads/report"
+    },
+    {
+      "title": "전화상담 운영 가이드",
+      "description": "전화상담은 환자가 앱에서 상담을 요청하면 병원이 확인 후 연락하는 방식이에요. 콜백 속도가 상담 전환에 큰 영향을 줘요.",
+      "category": "고객 관리",
+      "link": "/docs/customers/phone"
+    },
+    {
+      "title": "채팅상담과 첨부 이미지 관리",
+      "description": "채팅상담에서는 환자가 민감한 내용과 이미지를 보낼 수 있어요. 특히 비뇨기과·남성수술 영역에서는 신체사진, 성기사진, 수술 부위 사진이 포함될 수 있어요.",
+      "category": "고객 관리",
+      "link": "/docs/customers/chat"
+    },
+    {
+      "title": "상담 상태 관리 기준",
+      "description": "상담 상태는 담당자가 지금 무엇을 처리해야 하는지 알려주는 운영 기준이에요. 상태를 정확히 남기면 미응답, 중복 연락, 예약 누락을 줄일 수 있어요.",
+      "category": "고객 관리",
+      "link": "/docs/customers/consultation-status"
+    },
+    {
+      "title": "부재중·콜백 누락 예방 가이드",
+      "description": "비뇨기과·남성수술 상담은 환자가 통화 가능한 시간이 짧을 수 있어요. 부재중 상담을 놓치면 같은 광고비로 얻은 상담 기회가 사라질 수 있어요.",
+      "category": "고객 관리",
+      "link": "/docs/customers/missed-callback"
+    },
+    {
+      "title": "상담 안내 문구 운영 기준",
+      "description": "상담팀이 앱에 보이는 정보와 다른 내용을 말하면 환자는 가격이나 조건을 잘못 이해할 수 있어요. 상담 문구는 이벤트 등록 내용과 같은 기준으로 맞춰야 해요.",
+      "category": "고객 관리",
+      "link": "/docs/customers/consultation-script"
+    },
+    {
+      "title": "후기·인증후기 답글 가이드",
+      "description": "후기 답글은 다른 환자도 볼 수 있는 공개 응대예요. 진료 내용이나 환자 개인정보가 드러나지 않도록 작성해 주세요.",
+      "category": "고객 관리",
+      "link": "/docs/customers/reviews"
+    },
+    {
+      "title": "문제 후기 검토 요청 가이드",
+      "description": "후기가 마음에 들지 않는다는 이유만으로 삭제할 수는 없어요. 다만 개인정보 노출, 욕설, 명백한 허위사실, 타인 비방처럼 검토가 필요한 경우에는 자신있나에 확인을 요청할 수 있어요.",
+      "category": "고객 관리",
+      "link": "/docs/customers/review-dispute"
+    },
+    {
+      "title": "환자정보 보호 가이드",
+      "description": "파트너센터에서 확인하는 환자정보는 상담과 예약 처리를 위해 제공돼요.",
+      "category": "고객 관리",
+      "link": "/docs/customers/privacy"
+    },
+    {
+      "title": "앱예약 전체 흐름",
+      "description": "앱예약은 환자가 자신있나에서 병원 예약을 요청하고, 병원이 실제 진료 가능 여부를 확인해 운영하는 흐름이에요. 예약 화면은 상담팀과 데스크가 같은 기준으로 봐야 해요.",
+      "category": "예약 관리",
+      "link": "/docs/appointments/overview"
+    },
+    {
+      "title": "예약 가능 시간 설정",
+      "description": "예약 가능 시간은 환자가 직접 선택하는 기준이에요. 실제 진료와 상담이 가능한 시간만 열어두면 변경 연락과 예약 취소를 줄일 수 있어요.",
+      "category": "예약 관리",
+      "link": "/docs/appointments/schedule"
+    },
+    {
+      "title": "예약 확정 처리 기준",
+      "description": "예약 요청이 들어오면 가능한 빨리 병원 내부 예약표와 비교해 확정 여부를 정해야 해요. 확정이 늦어지면 환자가 다른 병원으로 이동할 수 있어요.",
+      "category": "예약 관리",
+      "link": "/docs/appointments/confirm"
+    },
+    {
+      "title": "예약 변경·취소 처리",
+      "description": "예약 변경과 취소는 환자 불만이 생기기 쉬운 구간이에요. 변경 사유, 대체 시간, 안내 내용을 남겨두면 같은 문의를 반복하지 않아도 돼요.",
+      "category": "예약 관리",
+      "link": "/docs/appointments/change-cancel"
+    },
+    {
+      "title": "휴진·임시 마감일 관리",
+      "description": "휴진일과 임시 마감일을 제때 닫지 않으면 환자가 예약할 수 없는 시간에 예약을 요청할 수 있어요. 예약 가능 시간은 병원 일정 변경과 함께 관리해야 해요.",
+      "category": "예약 관리",
+      "link": "/docs/appointments/closed-days"
+    },
+    {
+      "title": "노쇼·방문완료 처리",
+      "description": "예약 이후 상태를 정리해야 리포트와 상담 운영을 올바르게 볼 수 있어요. 환자가 내원했는지, 취소됐는지, 노쇼인지 구분해 주세요.",
+      "category": "예약 관리",
+      "link": "/docs/appointments/no-show-complete"
+    },
+    {
+      "title": "광고비 충전과 포인트 구분",
+      "description": "자신있나 광고비는 광고잔고로 관리돼요. 광고잔고는 유료 충전 포인트와 무료 지급 포인트로 구분돼요.",
+      "category": "충전·환불 관리",
+      "link": "/docs/payments/charge"
+    },
+    {
+      "title": "환불·보상 기준",
+      "description": "환불과 보상은 광고 상품, 집행 상태, 취소 시점, 광고 소재 상태, 노출 여부를 확인한 뒤 처리돼요. 파트너센터에서는 요청 전에 필요한 정보를 먼저 정리하면 확인이 빨라져요.",
+      "category": "충전·환불 관리",
+      "link": "/docs/payments/refund"
+    },
+    {
+      "title": "세금계산서와 증빙 안내",
+      "description": "유료 충전 포인트는 실제 결제 또는 세금계산서 발행 기준으로 증빙을 관리할 수 있어요. 무료 지급 포인트는 유료 충전금과 구분해서 확인해야 해요.",
+      "category": "충전·환불 관리",
+      "link": "/docs/payments/tax"
+    },
+    {
+      "title": "의료광고 기본 준수 가이드",
+      "description": "자신있나에 등록하는 병원 소개, 이벤트, 이미지, 광고 문구는 의료광고 기준을 지켜야 해요. 이 문서는 병원이 콘텐츠를 등록하기 전에 스스로 점검할 수 있도록 정리한 안내예요.",
+      "category": "운영 정책·의료광고",
+      "link": "/docs/policy/medical-ad-law"
+    },
+    {
+      "title": "콘텐츠 등록 전 의료광고 체크리스트",
+      "description": "이 문서는 이벤트, 병원 소개, 의사 소개, 이미지, 배너를 등록하기 직전에 확인하는 체크리스트예요. 등록 담당자가 이 순서대로만 확인해도 반려와 상담 혼선을 줄일 수 있어요.",
+      "category": "운영 정책·의료광고",
+      "link": "/docs/policy/medical-ad-checklist"
+    },
+    {
+      "title": "의료광고 반려 사유별 수정 가이드",
+      "description": "검수 반려는 콘텐츠를 처음부터 다시 만들라는 뜻이 아니에요. 어느 위치가 왜 문제인지 확인하고, 같은 의미의 위험 표현이 다른 위치에 남아 있지 않게 고치는 과정이에요.",
+      "category": "운영 정책·의료광고",
+      "link": "/docs/policy/medical-review-fix"
+    },
+    {
+      "title": "이미지·후기·환자자료 사용 기준",
+      "description": "이미지와 후기, 상담 자료는 환자가 빠르게 신뢰를 판단하는 요소예요. 동시에 의료광고와 개인정보 이슈가 생기기 쉬운 영역이어서 등록 전 기준을 분명히 해야 해요.",
+      "category": "운영 정책·의료광고",
+      "link": "/docs/policy/image-review-privacy"
+    },
+    {
+      "title": "환자 유인·알선 금지 안내",
+      "description": "플랫폼 운영 중에는 환자를 부당하게 유인하거나 알선으로 오해될 수 있는 행동을 피해야 해요. 자신있나는 병원이 정보를 정확하게 등록하고, 환자가 상담과 예약을 판단할 수 있도록 돕는 가이드를 제공해요.",
+      "category": "운영 정책·의료광고",
+      "link": "/docs/policy/patient-inducement"
+    },
+    {
+      "title": "금지 행동과 운영 제한 기준",
+      "description": "아래 행동은 병원 신뢰와 환자 보호에 영향을 줄 수 있어요. 반복되면 콘텐츠 수정 요청, 노출 제한, 광고 중지, 계정 확인 등의 운영 조치가 진행될 수 있어요.",
+      "category": "운영 정책·의료광고",
+      "link": "/docs/policy/prohibited-actions"
+    },
+    {
+      "title": "자주 발생하는 문제 해결",
+      "description": "운영 중 자주 생기는 문제는 대부분 상태, 잔고, 검수, 담당자 기준을 확인하면 해결할 수 있어요.",
+      "category": "운영 정책·의료광고",
+      "link": "/docs/policy/troubleshooting"
+    },
+    {
+      "title": "파트너 가이드 화면 구조",
+      "description": "자신있나 파트너 가이드는 병원 담당자가 같은 구조로 문서를 읽을 수 있도록 레이아웃을 통일해요.",
+      "category": "운영 정책·의료광고",
+      "link": "/docs/policy/screen-layout"
+    },
+    {
+      "title": "자주 묻는 질문",
+      "description": "병원 입점, 병원 프로필 등록, 의사 프로필 등록, 이벤트 등록, 일반 리스트 노출은 기본적으로 무료예요. 유료 광고를 신청하거나 과금 조건이 발생한 경우에만 광고비가 차감돼요.",
+      "category": "FAQ",
+      "link": "/docs/faq/overview"
+    },
+    {
+      "title": "용어 사전",
+      "description": "자신있나 운영과 광고에서 자주 쓰는 용어를 정리했어요.",
+      "category": "용어 사전",
+      "link": "/docs/glossary/overview"
+    }
+  ]
+}
