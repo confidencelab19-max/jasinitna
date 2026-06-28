@@ -8,9 +8,9 @@
 - `src/data/site.json`: 사이트 이름, URL, 로고, 푸터 같은 전역 설정입니다.
 - `src/data/home.json`: 홈 화면의 안내 문구와 주요 카테고리입니다.
 - `src/css/custom.css`: 공개 사이트의 디자인 토큰과 레이아웃입니다.
-- `static/admin/config.yml`: 직원용 CMS 카테고리 메뉴와 입력 필드입니다.
+- `static/admin/cms.js`: 직원용 CMS 로그인, 문서 목록, 저장 화면입니다.
 - `static/admin/cms.css`: CMS 화면 보정 스타일입니다.
-- `static/admin/index.html`: Decap CMS 관리자 화면입니다.
+- `static/admin/index.html`: 자체 CMS 관리자 화면입니다.
 
 ## 문서 frontmatter
 
@@ -42,11 +42,11 @@ review_due_at: 2026-12-26
 1. `pnpm run build`로 정적 파일을 생성합니다.
 2. `pnpm dlx wrangler pages deploy build --project-name jasinitna-partner-guide --branch main`으로 배포합니다.
 3. 운영 URL은 `https://jasinitna-partner-guide.pages.dev`입니다.
-4. CMS는 GitHub 저장소 `confidencelab19-max/jasinitna`를 사용합니다.
+4. CMS는 GitHub 저장소 `confidencelab19-max/jasinitna`를 저장소로 사용합니다.
 
 ## CMS 로그인
 
 - 관리자 주소는 `https://jasinitna-partner-guide.pages.dev/admin/`입니다.
-- GitHub OAuth App의 callback URL은 `https://jasinitna-partner-guide.pages.dev/api/callback`이어야 합니다.
-- Cloudflare Pages 환경변수 `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`이 있어야 로그인이 완료됩니다.
+- 직원은 GitHub로 로그인하지 않습니다. `CMS_ID`, `CMS_PASSWORD`로 로그인합니다.
+- Cloudflare Pages 환경변수 `CMS_ID`, `CMS_PASSWORD`, `CMS_SESSION_SECRET`, `GITHUB_TOKEN`이 있어야 저장이 완료됩니다.
 - `ADMIN_USER`, `ADMIN_PASS`를 추가하면 CMS 진입 전에 Basic Auth를 한 번 더 요구합니다.

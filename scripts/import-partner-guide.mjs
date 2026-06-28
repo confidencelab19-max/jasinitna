@@ -2723,7 +2723,11 @@ ${docs.map(collectionBlock).join('\n')}
               - { label: "가이드 수", name: guideCount, widget: number, value_type: int, min: 0, required: false }
 `;
 
-writeFileSync(join(root, 'static', 'admin', 'config.yml'), config, 'utf8');
+writeFileSync(
+  join(root, 'static', 'admin', 'config.yml'),
+  '# 자신있나 파트너 가이드는 자체 CMS를 사용합니다. 이 파일은 Decap CMS 설정으로 사용하지 않습니다.\n',
+  'utf8',
+);
 
 const guideCount = docs.reduce((sum, category) => sum + category.guides.length, 0);
 console.log(`Imported ${docs.length} guide categories and ${guideCount} guides.`);

@@ -41,22 +41,19 @@ pnpm run cms:local
 
 직원용 CMS 주소는 `https://jasinitna-partner-guide.pages.dev/admin/`입니다. 공개 사이트 안에는 관리자 링크를 노출하지 않습니다.
 
-CMS는 GitHub 저장소 `confidencelab19-max/jasinitna`에 저장된 문서를 수정합니다. Cloudflare Pages에서 GitHub 로그인을 완료하려면 GitHub OAuth App을 만들고 아래 값을 Cloudflare Pages 환경변수로 등록해야 합니다.
+CMS는 마스터 아이디/비밀번호로 로그인하고, 서버 쪽 Cloudflare Function이 GitHub 저장소 `confidencelab19-max/jasinitna`에 문서를 저장합니다. 직원에게 GitHub 계정을 공유하거나 저장소 권한을 줄 필요가 없습니다.
 
-- Homepage URL: `https://jasinitna-partner-guide.pages.dev`
-- Authorization callback URL: `https://jasinitna-partner-guide.pages.dev/api/callback`
-- Cloudflare Pages secret: `GITHUB_CLIENT_ID`
-- Cloudflare Pages secret: `GITHUB_CLIENT_SECRET`
+필요한 Cloudflare Pages secret은 다음과 같습니다.
 
-```bash
-pnpm dlx wrangler pages secret put GITHUB_CLIENT_ID --project-name jasinitna-partner-guide
-pnpm dlx wrangler pages secret put GITHUB_CLIENT_SECRET --project-name jasinitna-partner-guide
-```
+- `CMS_ID`: 관리자 아이디
+- `CMS_PASSWORD`: 관리자 비밀번호
+- `CMS_SESSION_SECRET`: 로그인 세션 서명값
+- `GITHUB_TOKEN`: `confidencelab19-max/jasinitna` 저장소 Contents read/write 권한이 있는 GitHub PAT
 
 ## 보안
 
 - `functions/_middleware.js`에서 Cloudflare 국가 판별값이 `KR`이 아닌 요청을 차단합니다.
-- `/admin/`은 검색 색인과 캐시를 막고, GitHub OAuth로 문서 수정 권한을 확인합니다.
+- `/admin/`은 검색 색인과 캐시를 막고, 자체 CMS 세션으로 문서 수정 권한을 확인합니다.
 - 추가로 `ADMIN_USER`, `ADMIN_PASS`를 설정하면 `/admin/` 진입 전에 Basic Auth를 한 번 더 요구합니다.
 - 모든 응답에 기본 보안 헤더를 적용합니다.
 - `/admin/`은 `noindex`, `no-store`로 설정합니다.
