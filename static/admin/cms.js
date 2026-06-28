@@ -5,6 +5,9 @@ const state = {
   originalBody: "",
   bodyEdited: false,
   dirty: false,
+  view: "documents",
+  settings: null,
+  sessionCheckTimer: null,
 };
 
 const els = {
@@ -31,11 +34,39 @@ const els = {
   ownerInput: document.querySelector("#owner-input"),
   bodyEditor: document.querySelector("#body-editor"),
   previewOutput: document.querySelector("#preview-output"),
+  documentImageInput: document.querySelector("#document-image-input"),
+  viewButtons: document.querySelectorAll("[data-view]"),
+  documentsView: document.querySelector("#documents-view"),
+  settingsView: document.querySelector("#settings-view"),
+  imagesView: document.querySelector("#images-view"),
+  siteTitleInput: document.querySelector("#site-title-input"),
+  siteTaglineInput: document.querySelector("#site-tagline-input"),
+  siteUrlInput: document.querySelector("#site-url-input"),
+  siteLogoInput: document.querySelector("#site-logo-input"),
+  siteFaviconInput: document.querySelector("#site-favicon-input"),
+  siteFooterInput: document.querySelector("#site-footer-input"),
+  homeBannerImageInput: document.querySelector("#home-banner-image-input"),
+  homeBannerTitleInput: document.querySelector("#home-banner-title-input"),
+  homeBannerDescriptionInput: document.querySelector("#home-banner-description-input"),
+  homeSearchPlaceholderInput: document.querySelector("#home-search-placeholder-input"),
+  homeButtonTextInput: document.querySelector("#home-button-text-input"),
+  homeButtonLinkInput: document.querySelector("#home-button-link-input"),
+  homeJsonInput: document.querySelector("#home-json-input"),
+  imageFileInput: document.querySelector("#image-file-input"),
+  imageUploadButton: document.querySelector("#image-upload-button"),
+  imageUploadResult: document.querySelector("#image-upload-result"),
+  imageList: document.querySelector("#image-list"),
 };
 
 function setStatus(message, type = "") {
   els.saveState.textContent = message;
   els.saveState.className = `cms-state${type ? ` is-${type}` : ""}`;
+}
+
+function deployStatusMessage(savedText, deploy) {
+  if (!deploy) return savedText;
+  if (deploy.triggered) return `${savedText} · 배포 요청됨`;
+  return `${savedText} · 자동 배포 설정 필요`;
 }
 
 function setMode(mode) {
@@ -54,8 +85,57 @@ async function api(path, options = {}) {
   });
   const text = await response.text();
   const data = text ? JSON.parse(text) : {};
-  if (!response.ok) throw new Error(data.error || "요청을 처리하지 못했어요.");
+  if (!response.ok) {
+    if (response.status === 401 && !path.endsWith("/login")) {
+      forceLogout("세션이 만료됐어요. 다시 로그인해 주세요.");
+    }
+    throw new Error(data.error || "요청을 처리하지 못했어요.");
+  }
   return data;
+}
+
+function startSessionWatch() {
+  window.clearInterval(state.sessionCheckTimer);
+  state.sessionCheckTimer = window.setInterval(async () => {
+    try {
+      await api("/api/cms/me");
+    } catch {
+      window.clearInterval(state.sessionCheckTimer);
+    }
+  }, 60 * 1000);
+}
+
+function stopSessionWatch() {
+  window.clearInterval(state.sessionCheckTimer);
+  state.sessionCheckTimer = null;
+}
+
+function setView(view) {
+  state.view = view;
+  els.documentsView.hidden = view !== "documents";
+  els.settingsView.hidden = view !== "settings";
+  els.imagesView.hidden = view !== "images";
+  els.newDocButton.hidden = view !== "documents";
+  els.saveButton.textContent = view === "settings" ? "설정 저장" : "저장";
+
+  els.viewButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.view === view);
+  });
+
+  if (view === "documents") {
+    els.currentTitle.textContent = els.titleInput.value || "문서 관리";
+    els.currentPath.textContent = state.activePath || "문서를 선택하세요.";
+  }
+  if (view === "settings") {
+    els.currentTitle.textContent = "사이트 설정";
+    els.currentPath.textContent = "사이트 기본 정보와 메인 화면을 관리해요.";
+    if (!state.settings) loadSettings().catch((error) => setStatus(error.message, "error"));
+  }
+  if (view === "images") {
+    els.currentTitle.textContent = "이미지 관리";
+    els.currentPath.textContent = "문서와 배너에 사용할 이미지를 업로드해요.";
+    loadImages().catch((error) => setStatus(error.message, "error"));
+  }
 }
 
 function escapeHtml(value) {
@@ -157,6 +237,12 @@ function markdownToHtml(markdown) {
       html += `<li>${formatInline(line.replace(/^\d+\.\s+/, ""))}</li>`;
       return;
     }
+    if (/^!\[(.*?)\]\((.*?)\)$/.test(line)) {
+      closeList();
+      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+      html += `<figure><img src="${escapeHtml(imageMatch[2])}" alt="${escapeHtml(imageMatch[1] || "")}" /><figcaption>${escapeHtml(imageMatch[1] || "이미지")}</figcaption></figure>`;
+      return;
+    }
     if (line.startsWith("- ")) {
       if (listType !== "ul") {
         closeList();
@@ -200,6 +286,11 @@ function htmlToMarkdown(root) {
       Array.from(node.querySelectorAll("li")).forEach((li) => lines.push(`- ${li.innerText.trim()}`));
     } else if (tag === "ol") {
       Array.from(node.querySelectorAll("li")).forEach((li, index) => lines.push(`${index + 1}. ${li.innerText.trim()}`));
+    } else if (tag === "figure") {
+      const img = node.querySelector("img");
+      if (img) lines.push(`![${img.alt || "이미지"}](${img.getAttribute("src") || ""})`);
+    } else if (tag === "img") {
+      lines.push(`![${node.alt || "이미지"}](${node.getAttribute("src") || ""})`);
     } else if (node.classList.contains("cms-note-block")) {
       lines.push(`> ${text}`);
     } else {
@@ -258,9 +349,10 @@ function showEditor() {
   els.logoutButton.hidden = false;
   els.saveButton.hidden = false;
   setMode("is-authenticated");
+  startSessionWatch();
 }
 
-function showLogin() {
+function showLogin(message = "") {
   els.loginPanel.hidden = false;
   els.editorPanel.hidden = true;
   els.logoutButton.hidden = true;
@@ -270,9 +362,17 @@ function showLogin() {
   state.activePath = "";
   state.activeSha = "";
   state.dirty = false;
+  state.settings = null;
+  stopSessionWatch();
   els.documentList.innerHTML = "";
   els.currentTitle.textContent = "로그인이 필요합니다";
   els.currentPath.textContent = "마스터 계정으로 접속하면 문서를 수정할 수 있어요.";
+  els.loginError.textContent = message;
+}
+
+function forceLogout(message) {
+  showLogin(message);
+  setStatus("로그아웃됨");
 }
 
 async function loadDocuments() {
@@ -282,6 +382,195 @@ async function loadDocuments() {
   renderDocuments();
   setStatus("불러옴", "ok");
   if (state.documents.length && !state.activePath) await openDocument(state.documents[0].path);
+}
+
+async function loadSettings() {
+  setStatus("설정 불러오는 중");
+  state.settings = await api("/api/cms/settings");
+  const site = state.settings.site.value;
+  const home = state.settings.home.value;
+  const banner = home.banners?.[0] || {};
+
+  els.siteTitleInput.value = site.title || "";
+  els.siteTaglineInput.value = site.tagline || "";
+  els.siteUrlInput.value = site.url || "";
+  els.siteLogoInput.value = site.logo || "";
+  els.siteFaviconInput.value = site.favicon || "";
+  els.siteFooterInput.value = site.footerCopyright || "";
+  els.homeBannerImageInput.value = banner.image || "";
+  els.homeBannerTitleInput.value = banner.title || "";
+  els.homeBannerDescriptionInput.value = banner.description || "";
+  els.homeSearchPlaceholderInput.value = banner.searchPlaceholder || "";
+  els.homeButtonTextInput.value = banner.buttonText || "";
+  els.homeButtonLinkInput.value = banner.buttonLink || "";
+  els.homeJsonInput.value = JSON.stringify(home, null, 2);
+  setStatus("설정 불러옴", "ok");
+}
+
+async function saveSettings() {
+  if (!state.settings) await loadSettings();
+
+  let home;
+  try {
+    home = JSON.parse(els.homeJsonInput.value);
+  } catch {
+    setStatus("홈 JSON 형식 오류", "error");
+    return;
+  }
+
+  home.banners = home.banners?.length ? home.banners : [{}];
+  home.banners[0] = {
+    ...home.banners[0],
+    image: els.homeBannerImageInput.value.trim(),
+    title: els.homeBannerTitleInput.value.trim(),
+    description: els.homeBannerDescriptionInput.value.trim(),
+    searchPlaceholder: els.homeSearchPlaceholderInput.value.trim(),
+    buttonText: els.homeButtonTextInput.value.trim(),
+    buttonLink: els.homeButtonLinkInput.value.trim(),
+  };
+
+  const site = {
+    ...state.settings.site.value,
+    title: els.siteTitleInput.value.trim(),
+    tagline: els.siteTaglineInput.value.trim(),
+    url: els.siteUrlInput.value.trim(),
+    logo: els.siteLogoInput.value.trim(),
+    favicon: els.siteFaviconInput.value.trim(),
+    footerCopyright: els.siteFooterInput.value.trim(),
+  };
+
+  setStatus("설정 저장 중");
+  const result = await api("/api/cms/settings", {
+    method: "PUT",
+    body: JSON.stringify({
+      site: {value: site, sha: state.settings.site.sha},
+      home: {value: home, sha: state.settings.home.sha},
+    }),
+  });
+
+  if (result.site?.sha) state.settings.site.sha = result.site.sha;
+  if (result.home?.sha) state.settings.home.sha = result.home.sha;
+  state.settings.site.value = site;
+  state.settings.home.value = home;
+  els.homeJsonInput.value = JSON.stringify(home, null, 2);
+  setStatus(deployStatusMessage("설정 저장됨", result.deploy), result.deploy?.triggered ? "ok" : "error");
+}
+
+function markSettingsDirty() {
+  setStatus("설정 수정 중");
+}
+
+async function fileToBase64(file) {
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  return dataUrl.split(",")[1] || "";
+}
+
+async function loadImages() {
+  setStatus("이미지 불러오는 중");
+  const data = await api("/api/cms/images");
+  renderImages(data.images || []);
+  setStatus("이미지 불러옴", "ok");
+}
+
+function renderImages(images) {
+  els.imageList.innerHTML = "";
+
+  if (!images.length) {
+    els.imageList.innerHTML = '<p class="cms-help-text">아직 업로드된 이미지가 없어요.</p>';
+    return;
+  }
+
+  images.forEach((image) => {
+    const item = document.createElement("div");
+    item.className = "cms-image-item";
+    item.innerHTML = `
+      <img src="${escapeHtml(image.url)}" alt="" loading="lazy" />
+      <div>
+        <strong>${escapeHtml(image.name)}</strong>
+        <input readonly value="${escapeHtml(image.url)}" />
+        <div class="cms-image-actions">
+          <button type="button" data-copy="${escapeHtml(image.url)}">경로 복사</button>
+          <button type="button" data-banner="${escapeHtml(image.url)}">배너에 사용</button>
+        </div>
+      </div>
+    `;
+    els.imageList.append(item);
+  });
+
+  els.imageList.querySelectorAll("[data-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(button.dataset.copy).catch(() => {});
+      els.imageUploadResult.textContent = `복사됨: ${button.dataset.copy}`;
+    });
+  });
+  els.imageList.querySelectorAll("[data-banner]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setView("settings");
+      els.homeBannerImageInput.value = button.dataset.banner;
+      markSettingsDirty();
+    });
+  });
+}
+
+async function uploadImage() {
+  const file = els.imageFileInput.files?.[0];
+  if (!file) {
+    setStatus("이미지 선택 필요", "error");
+    return;
+  }
+
+  setStatus("이미지 업로드 중");
+  const result = await api("/api/cms/images", {
+    method: "POST",
+    body: JSON.stringify({
+      name: file.name,
+      type: file.type,
+      content: await fileToBase64(file),
+    }),
+  });
+
+  els.imageUploadResult.textContent = deployStatusMessage(`업로드 완료: ${result.url}`, result.deploy);
+  els.imageFileInput.value = "";
+  await loadImages();
+}
+
+async function uploadDocumentImage(file) {
+  if (!file) return;
+
+  setStatus("문서 이미지 업로드 중");
+  const result = await api("/api/cms/images", {
+    method: "POST",
+    body: JSON.stringify({
+      name: file.name,
+      type: file.type,
+      content: await fileToBase64(file),
+    }),
+  });
+
+  insertHtmlAtCursor(
+    `<figure><img src="${escapeHtml(result.url)}" alt="${escapeHtml(file.name.replace(/\.[^.]+$/, ""))}" /><figcaption>${escapeHtml(file.name)}</figcaption></figure>`,
+  );
+  markDirty(true);
+  setStatus(deployStatusMessage("이미지 삽입됨", result.deploy), result.deploy?.triggered ? "ok" : "");
+}
+
+function insertHtmlAtCursor(html) {
+  els.bodyEditor.focus();
+  const selection = window.getSelection();
+  if (!selection || !selection.rangeCount) {
+    els.bodyEditor.insertAdjacentHTML("beforeend", html);
+    return;
+  }
+
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+  const fragment = range.createContextualFragment(html);
+  range.insertNode(fragment);
 }
 
 async function openDocument(path) {
@@ -310,7 +599,7 @@ async function openDocument(path) {
 
   renderDocuments();
   refreshPreview();
-  setStatus("저장됨", "ok");
+  setStatus(deployStatusMessage("저장됨", data.deploy), data.deploy?.triggered ? "ok" : "error");
 }
 
 function composeContent() {
@@ -357,6 +646,18 @@ async function saveDocument() {
   await loadDocuments();
 }
 
+async function saveCurrentView() {
+  if (state.view === "settings") {
+    await saveSettings();
+    return;
+  }
+  if (state.view === "images") {
+    setStatus("이미지는 업로드 즉시 저장돼요", "ok");
+    return;
+  }
+  await saveDocument();
+}
+
 function createNewDocument() {
   if (state.dirty && !window.confirm("저장하지 않은 수정 내용이 있어요. 새 문서를 만들까요?")) return;
 
@@ -395,6 +696,7 @@ async function login(event) {
     });
     els.loginPassword.value = "";
     showEditor();
+    setView("documents");
     await loadDocuments();
   } catch (error) {
     els.loginError.textContent = error.message;
@@ -425,6 +727,10 @@ function applyCommand(command) {
   if (command === "note") {
     document.execCommand("insertHTML", false, '<blockquote class="cms-note-block">확인해야 할 내용을 입력하세요.</blockquote>');
   }
+  if (command === "image") {
+    els.documentImageInput.click();
+    return;
+  }
   markDirty(true);
 }
 
@@ -432,6 +738,7 @@ async function boot() {
   try {
     await api("/api/cms/me");
     showEditor();
+    setView("documents");
     await loadDocuments();
   } catch {
     showLogin();
@@ -441,7 +748,7 @@ async function boot() {
 
 els.loginForm.addEventListener("submit", login);
 els.logoutButton.addEventListener("click", logout);
-els.saveButton.addEventListener("click", () => saveDocument().catch((error) => setStatus(error.message, "error")));
+els.saveButton.addEventListener("click", () => saveCurrentView().catch((error) => setStatus(error.message, "error")));
 els.newDocButton.addEventListener("click", createNewDocument);
 els.searchInput.addEventListener("input", renderDocuments);
 els.bodyEditor.addEventListener("input", () => markDirty(true));
@@ -465,6 +772,33 @@ els.contentInput.addEventListener("input", () => {
 });
 document.querySelectorAll("[data-command]").forEach((button) => {
   button.addEventListener("click", () => applyCommand(button.dataset.command));
+});
+els.viewButtons.forEach((button) => {
+  button.addEventListener("click", () => setView(button.dataset.view));
+});
+[
+  els.siteTitleInput,
+  els.siteTaglineInput,
+  els.siteUrlInput,
+  els.siteLogoInput,
+  els.siteFaviconInput,
+  els.siteFooterInput,
+  els.homeBannerImageInput,
+  els.homeBannerTitleInput,
+  els.homeBannerDescriptionInput,
+  els.homeSearchPlaceholderInput,
+  els.homeButtonTextInput,
+  els.homeButtonLinkInput,
+  els.homeJsonInput,
+].forEach((input) => input.addEventListener("input", markSettingsDirty));
+els.imageUploadButton.addEventListener("click", () => uploadImage().catch((error) => setStatus(error.message, "error")));
+els.documentImageInput.addEventListener("change", () => {
+  const file = els.documentImageInput.files?.[0];
+  uploadDocumentImage(file)
+    .catch((error) => setStatus(error.message, "error"))
+    .finally(() => {
+      els.documentImageInput.value = "";
+    });
 });
 
 boot();

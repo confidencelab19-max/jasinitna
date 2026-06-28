@@ -63,14 +63,18 @@ function sessionSecret(env) {
 }
 
 async function createSessionCookie(env) {
+  const exp = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE;
   const payload = base64UrlEncode(
     JSON.stringify({
       sub: "admin",
-      exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE,
+      exp,
     }),
   );
   const signature = await sign(payload, sessionSecret(env));
-  return `${COOKIE_NAME}=${payload}.${signature}; Path=/; Max-Age=${SESSION_MAX_AGE}; HttpOnly; Secure; SameSite=Lax`;
+  return {
+    cookie: `${COOKIE_NAME}=${payload}.${signature}; Path=/; Max-Age=${SESSION_MAX_AGE}; HttpOnly; Secure; SameSite=Lax`,
+    expiresAt: exp,
+  };
 }
 
 function clearSessionCookie() {
@@ -89,7 +93,7 @@ async function requireSession(request, env) {
 
   try {
     const decoded = JSON.parse(base64UrlDecode(payload));
-    return decoded.exp > Math.floor(Date.now() / 1000);
+    return decoded.exp > Math.floor(Date.now() / 1000) ? decoded : false;
   } catch {
     return false;
   }
@@ -128,6 +132,28 @@ async function github(env, path, options = {}) {
   return data;
 }
 
+async function triggerDeploy(env) {
+  if (!env.CLOUDFLARE_DEPLOY_HOOK) {
+    return {
+      triggered: false,
+      reason: "CLOUDFLARE_DEPLOY_HOOK 환경변수가 없어 공개 사이트 자동 배포는 실행되지 않았습니다.",
+    };
+  }
+
+  const response = await fetch(env.CLOUDFLARE_DEPLOY_HOOK, {
+    method: "POST",
+    headers: {
+      "User-Agent": "jasinitna-cms-deploy-hook",
+    },
+  });
+
+  return {
+    triggered: response.ok,
+    status: response.status,
+    reason: response.ok ? "" : "Cloudflare 배포 훅 호출에 실패했습니다.",
+  };
+}
+
 function decodeContent(encoded) {
   const binary = atob(encoded.replace(/\n/g, ""));
   const bytes = new Uint8Array(binary.length);
@@ -158,6 +184,7 @@ function getDescription(content) {
 
 export {
   REPO,
+  SESSION_MAX_AGE,
   clearSessionCookie,
   createSessionCookie,
   decodeContent,
@@ -168,5 +195,6 @@ export {
   json,
   requireEnv,
   requireSession,
+  triggerDeploy,
   unauthorized,
 };

@@ -5,6 +5,7 @@ import {
   json,
   requireEnv,
   requireSession,
+  triggerDeploy,
   unauthorized,
 } from "./_utils.js";
 
@@ -73,10 +74,12 @@ export async function onRequestPut({request, env}) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
+  const deploy = await triggerDeploy(env);
 
   return json({
     path,
     sha: data.content?.sha || "",
     commit: data.commit?.sha || "",
+    deploy,
   });
 }

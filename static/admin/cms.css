@@ -107,6 +107,35 @@ body.is-login .cms-main {
   object-fit: contain;
 }
 
+.cms-nav-modes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.cms-nav-modes button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.cms-nav-modes button:hover,
+.cms-nav-modes button.is-active {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: var(--red-dark);
+}
+
 .cms-primary,
 .cms-secondary {
   min-height: 42px;
@@ -317,6 +346,10 @@ body.is-login .cms-main {
   padding: 0;
 }
 
+.cms-view {
+  min-height: calc(100vh - 74px);
+}
+
 .cms-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
@@ -352,6 +385,28 @@ body.is-login .cms-main {
   background: #ffffff;
   color: var(--text);
   outline: none;
+}
+
+.cms-settings-panel {
+  max-width: 1120px;
+  padding: 28px;
+}
+
+.cms-section-head {
+  margin: 0 0 16px;
+}
+
+.cms-section-head h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.cms-section-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .cms-toolbar {
@@ -448,6 +503,29 @@ body.is-login .cms-main {
   color: #7f1d1d;
 }
 
+.cms-rich-editor figure,
+.cms-preview figure {
+  margin: 18px 0;
+  padding: 0;
+}
+
+.cms-rich-editor figure img,
+.cms-preview figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.cms-rich-editor figcaption,
+.cms-preview figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .cms-advanced {
   margin-top: 18px;
   border: 1px solid var(--line);
@@ -490,6 +568,109 @@ body.is-login .cms-main {
     monospace;
   font-size: 14px;
   line-height: 1.75;
+}
+
+#home-json-input {
+  width: 100%;
+  min-height: 420px;
+  resize: vertical;
+  padding: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  outline: none;
+  color: #111827;
+  background: #ffffff;
+  font-family:
+    "JetBrains Mono",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.cms-upload-row {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cms-upload-row input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.cms-help-text {
+  margin: 8px 0 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cms-image-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.cms-image-item {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.cms-image-item img {
+  width: 86px;
+  height: 86px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.cms-image-item strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.cms-image-item input {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  color: #374151;
+  font-size: 12px;
+}
+
+.cms-image-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cms-image-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .cms-preview-panel {
@@ -550,7 +731,8 @@ body.is-login .cms-main {
 
   .cms-topbar,
   .cms-editor-fields,
-  .cms-workspace {
+  .cms-workspace,
+  .cms-upload-row {
     display: grid;
     grid-template-columns: 1fr;
   }

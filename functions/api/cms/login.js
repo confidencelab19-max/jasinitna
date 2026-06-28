@@ -12,11 +12,13 @@ export async function onRequestPost({request, env}) {
     return json({error: "아이디 또는 비밀번호가 맞지 않습니다."}, 401);
   }
 
+  const session = await createSessionCookie(env);
+
   return json(
-    {ok: true},
+    {ok: true, expiresAt: session.expiresAt},
     200,
     {
-      "Set-Cookie": await createSessionCookie(env),
+      "Set-Cookie": session.cookie,
     },
   );
 }

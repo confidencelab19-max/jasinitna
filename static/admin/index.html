@@ -14,6 +14,11 @@
           <img src="/img/logo.svg" alt="자신있나" />
           <strong>파트너 가이드 관리자</strong>
         </div>
+        <div class="cms-nav-modes" aria-label="관리 메뉴">
+          <button class="is-active" type="button" data-view="documents">문서 관리</button>
+          <button type="button" data-view="settings">사이트 설정</button>
+          <button type="button" data-view="images">이미지</button>
+        </div>
         <button id="new-doc-button" class="cms-primary" type="button">새 문서</button>
         <label class="cms-search">
           <span>문서 검색</span>
@@ -54,7 +59,8 @@
         </section>
 
         <section id="editor-panel" class="cms-editor" hidden>
-          <div class="cms-workspace">
+          <div id="documents-view" class="cms-view">
+            <div class="cms-workspace">
             <section class="cms-edit-panel" aria-label="쉬운 문서 편집">
               <div class="cms-editor-fields">
                 <label>
@@ -87,6 +93,8 @@
                 <button type="button" data-command="ul">목록</button>
                 <button type="button" data-command="ol">번호</button>
                 <button type="button" data-command="note">안내 박스</button>
+                <button type="button" data-command="image">이미지</button>
+                <input id="document-image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden />
               </div>
 
               <label class="cms-body-label" for="body-editor">본문 내용</label>
@@ -116,6 +124,95 @@
               </div>
               <article id="preview-output" class="cms-preview"></article>
             </aside>
+            </div>
+          </div>
+
+          <div id="settings-view" class="cms-view" hidden>
+            <section class="cms-settings-panel" aria-label="사이트 설정">
+              <div class="cms-section-head">
+                <h2>사이트 기본 정보</h2>
+                <p>병원 가이드 사이트의 이름, 설명, 로고, 메인 배너를 수정해요.</p>
+              </div>
+              <div class="cms-editor-fields">
+                <label>
+                  <span>사이트 이름</span>
+                  <input id="site-title-input" />
+                </label>
+                <label>
+                  <span>한 줄 설명</span>
+                  <input id="site-tagline-input" />
+                </label>
+                <label>
+                  <span>공개 URL</span>
+                  <input id="site-url-input" />
+                </label>
+                <label>
+                  <span>로고 경로</span>
+                  <input id="site-logo-input" />
+                </label>
+                <label>
+                  <span>파비콘 경로</span>
+                  <input id="site-favicon-input" />
+                </label>
+                <label>
+                  <span>푸터 문구</span>
+                  <input id="site-footer-input" />
+                </label>
+              </div>
+
+              <div class="cms-section-head">
+                <h2>메인 배너</h2>
+                <p>파트너 가이드 첫 화면의 검색 영역과 버튼을 관리해요.</p>
+              </div>
+              <div class="cms-editor-fields">
+                <label>
+                  <span>배너 이미지</span>
+                  <input id="home-banner-image-input" />
+                </label>
+                <label>
+                  <span>배너 제목</span>
+                  <input id="home-banner-title-input" />
+                </label>
+                <label>
+                  <span>배너 설명</span>
+                  <input id="home-banner-description-input" />
+                </label>
+                <label>
+                  <span>검색창 문구</span>
+                  <input id="home-search-placeholder-input" />
+                </label>
+                <label>
+                  <span>버튼 문구</span>
+                  <input id="home-button-text-input" />
+                </label>
+                <label>
+                  <span>버튼 링크</span>
+                  <input id="home-button-link-input" />
+                </label>
+              </div>
+
+              <details class="cms-advanced" open>
+                <summary>홈 화면 전체 구성</summary>
+                <p>카테고리, 입점 순서도, 원칙 문구까지 관리해요. JSON 형식이 깨지면 저장되지 않아요.</p>
+                <label class="cms-body-label" for="home-json-input">홈 화면 데이터</label>
+                <textarea id="home-json-input" spellcheck="false"></textarea>
+              </details>
+            </section>
+          </div>
+
+          <div id="images-view" class="cms-view" hidden>
+            <section class="cms-settings-panel" aria-label="이미지 관리">
+              <div class="cms-section-head">
+                <h2>이미지 업로드</h2>
+                <p>업로드한 이미지는 문서와 메인 배너에서 `/img/uploads/...` 경로로 사용할 수 있어요.</p>
+              </div>
+              <div class="cms-upload-row">
+                <input id="image-file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" />
+                <button id="image-upload-button" class="cms-primary" type="button">이미지 업로드</button>
+              </div>
+              <p id="image-upload-result" class="cms-help-text"></p>
+              <div id="image-list" class="cms-image-list"></div>
+            </section>
           </div>
         </section>
       </main>
