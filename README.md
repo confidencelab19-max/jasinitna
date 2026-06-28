@@ -49,6 +49,9 @@ CMS는 마스터 아이디/비밀번호로 로그인하고, 서버 쪽 Cloudflar
 - `CMS_PASSWORD`: 관리자 비밀번호
 - `CMS_SESSION_SECRET`: 로그인 세션 서명값
 - `GITHUB_TOKEN`: `confidencelab19-max/jasinitna` 저장소 Contents read/write 권한이 있는 GitHub PAT
+- `CLOUDFLARE_DEPLOY_HOOK`: 저장 후 공개 사이트를 자동 재배포할 Cloudflare Pages Deploy Hook URL
+
+문서나 사이트 설정을 저장하면 CMS는 GitHub에 먼저 저장하고, `CLOUDFLARE_DEPLOY_HOOK`이 설정되어 있으면 Cloudflare 재배포를 요청합니다. 이 값이 없으면 관리자 화면에 `자동 배포 설정 필요`가 표시됩니다.
 
 ## 보안
 

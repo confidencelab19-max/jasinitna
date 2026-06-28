@@ -49,4 +49,5 @@ review_due_at: 2026-12-26
 - 관리자 주소는 `https://jasinitna-partner-guide.pages.dev/admin/`입니다.
 - 직원은 GitHub로 로그인하지 않습니다. `CMS_ID`, `CMS_PASSWORD`로 로그인합니다.
 - Cloudflare Pages 환경변수 `CMS_ID`, `CMS_PASSWORD`, `CMS_SESSION_SECRET`, `GITHUB_TOKEN`이 있어야 저장이 완료됩니다.
+- 저장 후 공개 사이트까지 자동 반영하려면 `CLOUDFLARE_DEPLOY_HOOK`에 Cloudflare Pages Deploy Hook URL을 넣어야 합니다.
 - `ADMIN_USER`, `ADMIN_PASS`를 추가하면 CMS 진입 전에 Basic Auth를 한 번 더 요구합니다.
