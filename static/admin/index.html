@@ -54,17 +54,69 @@
         </section>
 
         <section id="editor-panel" class="cms-editor" hidden>
-          <div class="cms-editor-fields">
-            <label>
-              <span>문서 경로</span>
-              <input id="path-input" placeholder="docs/start/example.md" />
-            </label>
-            <label>
-              <span>커밋 메시지</span>
-              <input id="message-input" placeholder="가이드 문서 수정" />
-            </label>
+          <div class="cms-workspace">
+            <section class="cms-edit-panel" aria-label="쉬운 문서 편집">
+              <div class="cms-editor-fields">
+                <label>
+                  <span>문서 제목</span>
+                  <input id="title-input" placeholder="문서 제목" />
+                </label>
+                <label>
+                  <span>목록 한 줄 설명</span>
+                  <input id="description-input" placeholder="검색 결과와 목록에 보이는 설명" />
+                </label>
+                <label>
+                  <span>검토 상태</span>
+                  <select id="status-input">
+                    <option>게시 가능</option>
+                    <option>검토 필요</option>
+                    <option>수정 중</option>
+                    <option>사용 중지</option>
+                  </select>
+                </label>
+                <label>
+                  <span>담당 부서</span>
+                  <input id="owner-input" placeholder="예: 자신있나 파트너스" />
+                </label>
+              </div>
+
+              <div class="cms-toolbar" aria-label="본문 편집 도구">
+                <button type="button" data-command="h2">큰 제목</button>
+                <button type="button" data-command="h3">소제목</button>
+                <button type="button" data-command="bold">굵게</button>
+                <button type="button" data-command="ul">목록</button>
+                <button type="button" data-command="ol">번호</button>
+                <button type="button" data-command="note">안내 박스</button>
+              </div>
+
+              <label class="cms-body-label" for="body-editor">본문 내용</label>
+              <article id="body-editor" class="cms-rich-editor" contenteditable="true" aria-label="본문 내용"></article>
+
+              <details class="cms-advanced">
+                <summary>고급 원문 편집</summary>
+                <p>디자인 컴포넌트나 표 구조를 직접 수정해야 할 때만 사용하세요.</p>
+                <div class="cms-editor-fields cms-editor-fields--compact">
+                  <label>
+                    <span>문서 경로</span>
+                    <input id="path-input" placeholder="docs/start/example.md" />
+                  </label>
+                  <label>
+                    <span>커밋 메시지</span>
+                    <input id="message-input" placeholder="가이드 문서 수정" />
+                  </label>
+                </div>
+                <textarea id="content-input" spellcheck="false" aria-label="원문 내용"></textarea>
+              </details>
+            </section>
+
+            <aside class="cms-preview-panel" aria-label="문서 미리보기">
+              <div class="cms-preview-head">
+                <strong>미리보기</strong>
+                <span>병원 담당자에게 보이는 문장 흐름을 확인해요.</span>
+              </div>
+              <article id="preview-output" class="cms-preview"></article>
+            </aside>
           </div>
-          <textarea id="content-input" spellcheck="false" aria-label="문서 내용"></textarea>
         </section>
       </main>
     </div>
