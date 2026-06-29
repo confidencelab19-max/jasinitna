@@ -200,6 +200,33 @@ function hasDesignMdx(body) {
   return /<div\s|className=|<table[\s>]|guide-visual|guide-playbook|visual-screen/.test(body);
 }
 
+function stripTags(value = "") {
+  return value.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function getVisibleHeading(body) {
+  const htmlHeading = body.match(/<h1([^>]*)>([\s\S]*?)<\/h1>/i);
+  if (htmlHeading) return stripTags(htmlHeading[2]);
+
+  const markdownHeading = body.match(/^#\s+(.+)$/m);
+  return markdownHeading ? stripTags(markdownHeading[1]) : "";
+}
+
+function syncVisibleHeading(body, title) {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) return body;
+
+  if (/<h1([^>]*)>[\s\S]*?<\/h1>/i.test(body)) {
+    return body.replace(/<h1([^>]*)>[\s\S]*?<\/h1>/i, `<h1$1>${escapeHtml(cleanTitle)}</h1>`);
+  }
+
+  if (/^#\s+.+$/m.test(body)) {
+    return body.replace(/^#\s+.+$/m, `# ${cleanTitle}`);
+  }
+
+  return `<h1>${escapeHtml(cleanTitle)}</h1>\n\n${body.trim()}\n`;
+}
+
 function markdownToHtml(markdown) {
   const lines = markdown.split("\n");
   let html = "";
@@ -395,12 +422,12 @@ function forceLogout(message) {
   setStatus("로그아웃됨");
 }
 
-async function loadDocuments() {
-  setStatus("문서 불러오는 중");
+async function loadDocuments(options = {}) {
+  if (!options.silent) setStatus("문서 불러오는 중");
   const data = await api("/api/cms/documents");
   state.documents = data.documents;
   renderDocuments();
-  setStatus("불러옴", "ok");
+  if (!options.silent) setStatus("불러옴", "ok");
   if (state.documents.length && !state.activePath) await openDocument(state.documents[0].path);
 }
 
@@ -610,7 +637,7 @@ async function openDocument(path) {
   editPanel.classList.toggle("is-source-mode", isDesignDocument);
 
   els.pathInput.value = data.path;
-  els.titleInput.value = parsed.fields.title || getTitleFromMarkdown(data.path, data.content);
+  els.titleInput.value = getVisibleHeading(parsed.body) || parsed.fields.title || getTitleFromMarkdown(data.path, data.content);
   els.descriptionInput.value = parsed.fields.description || "";
   els.statusInput.value = parsed.fields.review_status || "게시 가능";
   els.ownerInput.value = parsed.fields.owner || "자신있나 파트너스";
@@ -643,7 +670,7 @@ function composeContent() {
     review_status: els.statusInput.value,
     owner: els.ownerInput.value.trim(),
   };
-  const body = state.bodyEdited ? htmlToMarkdown(els.bodyEditor) : state.originalBody || parsed.body;
+  const body = syncVisibleHeading(state.bodyEdited ? htmlToMarkdown(els.bodyEditor) : state.originalBody || parsed.body, fields.title);
   return serializeFrontmatter(fields, body);
 }
 
@@ -675,11 +702,11 @@ async function saveDocument() {
   els.currentTitle.textContent = els.titleInput.value;
   els.currentPath.textContent = path;
   setLivePreview(path);
-  setStatus(
-    deployStatusMessage("저장됨 · 공개 화면은 배포 완료 후 갱신돼요", data.deploy),
-    data.deploy?.triggered || data.deploy?.skipped ? "ok" : "error",
-  );
-  await loadDocuments();
+  const savedMessage = deployStatusMessage("저장됨 · 공개 화면은 배포 완료 후 갱신돼요", data.deploy);
+  const savedType = data.deploy?.triggered || data.deploy?.skipped ? "ok" : "error";
+  setStatus(savedMessage, savedType);
+  await loadDocuments({silent: true});
+  setStatus(savedMessage, savedType);
 }
 
 async function saveCurrentView() {
