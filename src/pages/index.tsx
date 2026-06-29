@@ -283,6 +283,35 @@ function WorkPreviewSection() {
   );
 }
 
+function LatestGuidesSection() {
+  const latestGuides = [...((homeData.guides || []) as SearchGuide[])].slice(-6).reverse();
+
+  if (!latestGuides.length) return null;
+
+  return (
+    <section className="guide-section guide-section--tight">
+      <div className="home-shell">
+        <div className="section-title-row">
+          <h2>최근 발행 문서</h2>
+          <p>관리자에서 새로 저장하거나 발행한 문서를 바로 확인해요.</p>
+        </div>
+        <div className="category-grid">
+          {latestGuides.map((guide) => (
+            <Link to={guide.link} className="category-card" key={guide.link}>
+              <div className="category-card__body">
+                <span>{guide.category}</span>
+                <h3>{guide.title}</h3>
+                <p>{guide.description}</p>
+              </div>
+              <FiChevronRight className="card-arrow" />
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CategorySection({query}: {query: string}) {
   const categories = homeData.categories as HomeCategory[];
   const normalizedQuery = normalizeSearch(query);
@@ -335,6 +364,7 @@ export default function Home(): React.JSX.Element {
         <HeroSection query={query} setQuery={setQuery} />
         <OnboardingFlowSection />
         <WorkPreviewSection />
+        <LatestGuidesSection />
         <CategorySection query={query} />
       </main>
     </Layout>
