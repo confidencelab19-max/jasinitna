@@ -8,7 +8,7 @@ const SECURITY_HEADERS = {
   "X-Frame-Options": "DENY",
 };
 
-const PRODUCTION_HOST = "jasinitna-partner-guide.pages.dev";
+const DEFAULT_ALLOWED_HOSTS = ["jasinitna-partner-guide.pages.dev"];
 
 function withSecurityHeaders(response, extraHeaders = {}) {
   const headers = new Headers(response.headers);
@@ -50,8 +50,12 @@ export async function onRequest(context) {
   const {request, env, next} = context;
   const url = new URL(request.url);
   const country = request.cf?.country || "";
+  const allowedHosts = (env.ALLOWED_HOSTS || DEFAULT_ALLOWED_HOSTS.join(","))
+    .split(",")
+    .map((host) => host.trim())
+    .filter(Boolean);
 
-  if (url.hostname !== PRODUCTION_HOST) {
+  if (!allowedHosts.includes(url.hostname)) {
     return blocked("Use the production domain only.");
   }
 
