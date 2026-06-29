@@ -8,6 +8,7 @@ const state = {
   view: "documents",
   settings: null,
   sessionCheckTimer: null,
+  liveOverride: false,
 };
 
 const els = {
@@ -225,6 +226,18 @@ function syncVisibleHeading(body, title) {
   }
 
   return `<h1>${escapeHtml(cleanTitle)}</h1>\n\n${body.trim()}\n`;
+}
+
+function mdxToEditableHtml(body) {
+  const cleaned = String(body || "")
+    .replace(/import\s+[^;]+;?/g, "")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/\bclassName=/g, "class=")
+    .trim();
+
+  if (/<[a-z][\s\S]*>/i.test(cleaned)) return cleaned;
+  return markdownToHtml(simplifyMdx(body));
 }
 
 function markdownToHtml(markdown) {
@@ -589,21 +602,19 @@ async function uploadImage() {
 async function uploadDocumentImage(file) {
   if (!file) return;
 
-  setStatus("문서 이미지 업로드 중");
-  const result = await api("/api/cms/images", {
-    method: "POST",
-    body: JSON.stringify({
-      name: file.name,
-      type: file.type,
-      content: await fileToBase64(file),
-    }),
+  setStatus("문서 이미지 처리 중");
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 
   insertHtmlAtCursor(
-    `<figure><img src="${escapeHtml(result.url)}" alt="${escapeHtml(file.name.replace(/\.[^.]+$/, ""))}" /><figcaption>${escapeHtml(file.name)}</figcaption></figure>`,
+    `<figure><img src="${escapeHtml(dataUrl)}" alt="${escapeHtml(file.name.replace(/\.[^.]+$/, ""))}" /><figcaption>${escapeHtml(file.name)}</figcaption></figure>`,
   );
   markDirty(true);
-  setStatus(deployStatusMessage("이미지 삽입됨", result.deploy), result.deploy?.triggered ? "ok" : "");
+  setStatus("이미지 삽입됨");
 }
 
 function insertHtmlAtCursor(html) {
@@ -624,41 +635,40 @@ async function openDocument(path) {
   if (state.dirty && !window.confirm("저장하지 않은 수정 내용이 있어요. 다른 문서로 이동할까요?")) return;
 
   setStatus("문서 여는 중");
-  const data = await api(`/api/cms/document?path=${encodeURIComponent(path)}`);
+  const [data, liveData] = await Promise.all([
+    api(`/api/cms/document?path=${encodeURIComponent(path)}`),
+    api(`/api/cms/override?path=${encodeURIComponent(path)}`),
+  ]);
   const parsed = parseFrontmatter(data.content);
+  const liveOverride = liveData.override || null;
 
   state.activePath = data.path;
   state.activeSha = data.sha || "";
   state.originalBody = parsed.body;
   state.bodyEdited = false;
   state.dirty = false;
-  const isDesignDocument = hasDesignMdx(parsed.body);
+  state.liveOverride = Boolean(liveOverride);
   const editPanel = els.bodyEditor.closest(".cms-edit-panel");
-  editPanel.classList.toggle("is-source-mode", isDesignDocument);
+  editPanel.classList.remove("is-source-mode");
 
   els.pathInput.value = data.path;
-  els.titleInput.value = getVisibleHeading(parsed.body) || parsed.fields.title || getTitleFromMarkdown(data.path, data.content);
-  els.descriptionInput.value = parsed.fields.description || "";
+  els.titleInput.value = liveOverride?.title || getVisibleHeading(parsed.body) || parsed.fields.title || getTitleFromMarkdown(data.path, data.content);
+  els.descriptionInput.value = liveOverride?.description || parsed.fields.description || "";
   els.statusInput.value = parsed.fields.review_status || "게시 가능";
   els.ownerInput.value = parsed.fields.owner || "자신있나 파트너스";
   els.messageInput.value = `${els.titleInput.value} 수정`;
   els.contentInput.value = data.content;
-  els.bodyEditor.contentEditable = isDesignDocument ? "false" : "true";
-  els.bodyEditor.classList.toggle("is-locked", isDesignDocument);
-  if (isDesignDocument) {
-    els.bodyEditor.innerHTML = "";
-    els.contentInput.closest("details").open = true;
-  } else {
-    els.bodyEditor.innerHTML = markdownToHtml(simplifyMdx(parsed.body));
-    els.contentInput.closest("details").open = false;
-  }
+  els.bodyEditor.contentEditable = "true";
+  els.bodyEditor.classList.remove("is-locked");
+  els.bodyEditor.innerHTML = liveOverride?.html || mdxToEditableHtml(parsed.body);
+  els.contentInput.closest("details").open = false;
   els.currentTitle.textContent = els.titleInput.value;
   els.currentPath.textContent = data.path;
   setLivePreview(data.path);
 
   renderDocuments();
   refreshPreview();
-  setStatus("문서 열림", "ok");
+  setStatus(state.liveOverride ? "CMS 수정본 적용 중" : "원본 문서 열림", "ok");
 }
 
 function composeContent() {
@@ -684,29 +694,31 @@ async function saveDocument() {
   const content = composeContent();
   els.contentInput.value = content;
   setStatus("저장 중");
-  const data = await api("/api/cms/document", {
+  const data = await api("/api/cms/override", {
     method: "PUT",
     body: JSON.stringify({
       path,
-      content,
-      message: els.messageInput.value.trim() || `${els.titleInput.value || "가이드"} 수정`,
-      sha: path === state.activePath ? state.activeSha : "",
+      title: els.titleInput.value.trim(),
+      description: els.descriptionInput.value.trim(),
+      html: els.bodyEditor.innerHTML,
+      published: true,
     }),
   });
 
-  state.activePath = data.path;
-  state.activeSha = data.sha || "";
-  state.originalBody = parseFrontmatter(content).body;
+  state.activePath = data.saved.path;
+  state.liveOverride = true;
   state.bodyEdited = false;
   state.dirty = false;
   els.currentTitle.textContent = els.titleInput.value;
   els.currentPath.textContent = path;
   setLivePreview(path);
-  const savedMessage = deployStatusMessage("저장됨 · 공개 화면은 배포 완료 후 갱신돼요", data.deploy);
-  const savedType = data.deploy?.triggered || data.deploy?.skipped ? "ok" : "error";
-  setStatus(savedMessage, savedType);
-  await loadDocuments({silent: true});
-  setStatus(savedMessage, savedType);
+  const currentDoc = state.documents.find((doc) => doc.path === path);
+  if (currentDoc) {
+    currentDoc.title = els.titleInput.value.trim();
+    currentDoc.description = els.descriptionInput.value.trim();
+  }
+  renderDocuments();
+  setStatus("저장됨 · 공개 화면에 바로 반영돼요", "ok");
 }
 
 async function saveCurrentView() {
