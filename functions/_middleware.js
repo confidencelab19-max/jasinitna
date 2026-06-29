@@ -1,11 +1,11 @@
 const SECURITY_HEADERS = {
   "Content-Security-Policy":
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://unpkg.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://unpkg.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
   "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
+  "X-Frame-Options": "SAMEORIGIN",
 };
 
 const DEFAULT_ALLOWED_HOSTS = ["jasinitna-partner-guide.pages.dev"];
