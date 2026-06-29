@@ -1,7 +1,6 @@
 (() => {
-  const ROOT_SELECTOR = ".theme-doc-markdown.markdown, article .markdown";
-  let cachedOverride = null;
-  let appliedHtml = "";
+  const ROOT_SELECTOR = ".theme-doc-markdown.markdown";
+  let cachedPatches = new Map();
 
   function routePath() {
     const path = window.location.pathname.replace(/\/+$/, "");
@@ -9,35 +8,41 @@
     return `${path.slice(1)}.md`;
   }
 
-  function escapeHtml(value) {
-    return String(value || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function renderHtml(override) {
-    const description = override.description ? `<p class="cms-live-description">${escapeHtml(override.description)}</p>` : "";
-    return `<header class="cms-live-header"><h1>${escapeHtml(override.title)}</h1>${description}</header>${override.html}`;
-  }
-
-  function apply() {
-    const override = cachedOverride;
-    const root = document.querySelector(ROOT_SELECTOR);
-    if (!root || !override || !override.html) return false;
-
-    const nextHtml = renderHtml(override);
-    if (root.innerHTML !== nextHtml) root.innerHTML = nextHtml;
-    appliedHtml = nextHtml;
-
-    document.title = `${override.title} | 자신있나 파트너 가이드`;
-    const activeItems = document.querySelectorAll(".menu__link--active, .breadcrumbs__link[aria-current='page']");
-    activeItems.forEach((item) => {
-      item.textContent = override.title;
+  function collectTextNodes(root) {
+    const nodes = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        const tag = parent.tagName.toLowerCase();
+        if (["script", "style", "noscript", "code", "pre", "textarea"].includes(tag)) return NodeFilter.FILTER_REJECT;
+        if (parent.closest(".hash-link, .theme-code-block")) return NodeFilter.FILTER_REJECT;
+        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
     });
-    document.documentElement.setAttribute("data-cms-live", "true");
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    return nodes;
+  }
+
+  function applyPatches() {
+    const root = document.querySelector(ROOT_SELECTOR);
+    if (!root || !cachedPatches.size) return false;
+    const nodes = collectTextNodes(root);
+    nodes.forEach((node, index) => {
+      const key = `t:${index}`;
+      if (cachedPatches.has(key) && node.nodeValue !== cachedPatches.get(key)) {
+        node.nodeValue = cachedPatches.get(key);
+      }
+    });
+    const title = root.querySelector("h1")?.textContent?.trim();
+    if (title) {
+      document.title = `${title} | 자신있나 파트너 가이드`;
+      document.querySelectorAll(".menu__link--active, .breadcrumbs__link[aria-current='page']").forEach((item) => {
+        item.textContent = title;
+      });
+    }
+    document.documentElement.setAttribute("data-cms-live", "patch");
     return true;
   }
 
@@ -45,18 +50,15 @@
     const path = routePath();
     if (!path) return;
     try {
-      const res = await fetch(`/api/guide/override?path=${encodeURIComponent(path)}&t=${Date.now()}`, {cache: "no-store"});
+      const res = await fetch(`/api/guide/patches?path=${encodeURIComponent(path)}&t=${Date.now()}`, {cache: "no-store"});
       if (!res.ok) return;
       const data = await res.json();
-      if (!data.override) return;
-      cachedOverride = data.override;
-      apply();
-      [100, 400, 900, 1800, 3200].forEach((delay) => window.setTimeout(apply, delay));
-      const observer = new MutationObserver(() => {
-        const root = document.querySelector(ROOT_SELECTOR);
-        if (root && appliedHtml && root.innerHTML !== appliedHtml) apply();
-      });
-      observer.observe(document.body, {childList: true, subtree: true});
+      cachedPatches = new Map((data.patches || []).map((patch) => [patch.key, patch.text]));
+      if (!cachedPatches.size) return;
+      applyPatches();
+      [100, 400, 900, 1800, 3200].forEach((delay) => window.setTimeout(applyPatches, delay));
+      const observer = new MutationObserver(applyPatches);
+      observer.observe(document.body, {childList: true, subtree: true, characterData: true});
       window.setTimeout(() => observer.disconnect(), 6000);
     } catch {}
   }
