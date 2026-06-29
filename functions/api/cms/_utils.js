@@ -59,7 +59,7 @@ function getCookie(request, name) {
 }
 
 function sessionSecret(env) {
-  return env.CMS_SESSION_SECRET || env.CMS_PASSWORD || "jasinitna-cms";
+  return String(env.CMS_SESSION_SECRET || env.CMS_PASSWORD || "jasinitna-cms").trim();
 }
 
 async function createSessionCookie(env) {
@@ -100,21 +100,22 @@ async function requireSession(request, env) {
 }
 
 function requireEnv(env) {
-  if (!env.CMS_ID || !env.CMS_PASSWORD) {
+  if (!String(env.CMS_ID || "").trim() || !String(env.CMS_PASSWORD || "").trim()) {
     return "CMS 계정 환경변수가 설정되지 않았습니다.";
   }
-  if (!env.GITHUB_TOKEN) {
+  if (!String(env.GITHUB_TOKEN || "").trim()) {
     return "GitHub 저장 토큰이 설정되지 않았습니다.";
   }
   return "";
 }
 
 async function github(env, path, options = {}) {
+  const token = String(env.GITHUB_TOKEN || "").trim();
   const response = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
     ...options,
     headers: {
       "Accept": "application/vnd.github+json",
-      "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
+      "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
       "User-Agent": "jasinitna-cms",
       "X-GitHub-Api-Version": "2022-11-28",
@@ -133,14 +134,16 @@ async function github(env, path, options = {}) {
 }
 
 async function triggerDeploy(env) {
-  if (!env.CLOUDFLARE_DEPLOY_HOOK) {
+  const deployHook = String(env.CLOUDFLARE_DEPLOY_HOOK || "").trim();
+
+  if (!deployHook) {
     return {
       triggered: false,
       reason: "CLOUDFLARE_DEPLOY_HOOK 환경변수가 없어 공개 사이트 자동 배포는 실행되지 않았습니다.",
     };
   }
 
-  const response = await fetch(env.CLOUDFLARE_DEPLOY_HOOK, {
+  const response = await fetch(deployHook, {
     method: "POST",
     headers: {
       "User-Agent": "jasinitna-cms-deploy-hook",
