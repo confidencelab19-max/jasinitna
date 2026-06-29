@@ -194,6 +194,10 @@ function simplifyMdx(body) {
     .trim();
 }
 
+function hasDesignMdx(body) {
+  return /<div\s|className=|<table[\s>]|guide-visual|guide-playbook|visual-screen/.test(body);
+}
+
 function markdownToHtml(markdown) {
   const lines = markdown.split("\n");
   let html = "";
@@ -585,6 +589,7 @@ async function openDocument(path) {
   state.originalBody = parsed.body;
   state.bodyEdited = false;
   state.dirty = false;
+  const isDesignDocument = hasDesignMdx(parsed.body);
 
   els.pathInput.value = data.path;
   els.titleInput.value = parsed.fields.title || getTitleFromMarkdown(data.path, data.content);
@@ -593,13 +598,27 @@ async function openDocument(path) {
   els.ownerInput.value = parsed.fields.owner || "자신있나 파트너스";
   els.messageInput.value = `${els.titleInput.value} 수정`;
   els.contentInput.value = data.content;
-  els.bodyEditor.innerHTML = markdownToHtml(simplifyMdx(parsed.body));
+  els.bodyEditor.contentEditable = isDesignDocument ? "false" : "true";
+  els.bodyEditor.classList.toggle("is-locked", isDesignDocument);
+  if (isDesignDocument) {
+    els.bodyEditor.innerHTML = `
+      <blockquote class="cms-note-block">
+        이 문서는 화면 목업, 표, 디자인 박스가 포함된 문서예요. 병원 페이지와 다르게 보이지 않도록 아래의 “실제 저장 원문”에서 수정해요.
+      </blockquote>
+      <p>문서 제목, 목록 설명, 검토 상태는 위 입력칸에서 바로 수정할 수 있어요.</p>
+      <p>본문 문장을 바꿀 때는 아래 원문에서 원하는 문장을 검색해서 수정한 뒤 저장해요.</p>
+    `;
+    els.contentInput.closest("details").open = true;
+  } else {
+    els.bodyEditor.innerHTML = markdownToHtml(simplifyMdx(parsed.body));
+    els.contentInput.closest("details").open = false;
+  }
   els.currentTitle.textContent = els.titleInput.value;
   els.currentPath.textContent = data.path;
 
   renderDocuments();
   refreshPreview();
-  setStatus(deployStatusMessage("저장됨", data.deploy), data.deploy?.triggered ? "ok" : "error");
+  setStatus("문서 열림", "ok");
 }
 
 function composeContent() {
@@ -642,7 +661,7 @@ async function saveDocument() {
   state.dirty = false;
   els.currentTitle.textContent = els.titleInput.value;
   els.currentPath.textContent = path;
-  setStatus("저장됨", "ok");
+  setStatus(deployStatusMessage("저장됨", data.deploy), data.deploy?.triggered ? "ok" : "error");
   await loadDocuments();
 }
 
