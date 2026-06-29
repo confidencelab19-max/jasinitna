@@ -1,5 +1,5 @@
 ---
-title: "광고 신청 전 확인사항 저장검증"
+title: "광고 신청 전 확인사항"
 description: "광고는 신청만 하면 바로 노출되는 것이 아니에요. 광고 소재, 랜딩 이벤트, 광고잔고, 지역, 예산을 확인한 뒤 승인돼요."
 sidebar_position: 2
 owner: "자신있나 파트너스"
@@ -7,7 +7,7 @@ review_status: "게시 가능"
 reviewed_at: 2026-06-27
 review_due_at: 2026-12-27
 ---
-# 광고 신청 전 확인사항 저장검증
+# 광고 신청 전 확인사항
 
 <div className="guide-visual guide-visual--ads">
   <div className="guide-visual__copy">
