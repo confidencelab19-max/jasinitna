@@ -1,6 +1,7 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import yaml from 'js-yaml';
 import siteSettings from './src/data/site.json';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
@@ -34,6 +35,20 @@ const config: Config = {
   i18n: {
     defaultLocale: 'ko',
     locales: ['ko'],
+  },
+
+  markdown: {
+    parseFrontMatter: async ({fileContent}) => {
+      const match = fileContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+      if (!match) {
+        return {frontMatter: {}, content: fileContent};
+      }
+
+      return {
+        frontMatter: (yaml.load(match[1]) as Record<string, unknown>) || {},
+        content: fileContent.slice(match[0].length),
+      };
+    },
   },
   
   presets: [
