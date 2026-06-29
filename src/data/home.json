@@ -4,7 +4,7 @@
       "image": "/img/social-card.png",
       "title": "자신있나 파트너 가이드",
       "description": "입점 후 병원 정보, 이벤트, 광고, 상담, 예약을 어떤 순서로 관리해야 하는지 확인할 수 있어요.",
-      "searchPlaceholder": "CMS ?? ?? 1782709970608",
+      "searchPlaceholder": "병원 정보, 이벤트 검수, 상담 관리, 광고 잔고 검색",
       "buttonText": "입점 첫날 가이드",
       "buttonLink": "/docs/start/first-day"
     }
