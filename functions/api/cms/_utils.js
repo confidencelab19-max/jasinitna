@@ -135,8 +135,17 @@ async function github(env, path, options = {}) {
 
 async function triggerDeploy(env) {
   const deployHook = String(env.CLOUDFLARE_DEPLOY_HOOK || "").trim();
+  const deployMode = String(env.AUTO_DEPLOY_MODE || "").trim();
 
   if (!deployHook) {
+    if (deployMode === "git") {
+      return {
+        triggered: true,
+        status: 202,
+        reason: "GitHub 연동 Pages가 저장 커밋을 감지해 자동 배포합니다.",
+      };
+    }
+
     return {
       triggered: false,
       reason: "CLOUDFLARE_DEPLOY_HOOK 환경변수가 없어 공개 사이트 자동 배포는 실행되지 않았습니다.",
