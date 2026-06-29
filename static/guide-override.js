@@ -1,5 +1,7 @@
 (() => {
-  const ROOT_SELECTOR = ".theme-doc-markdown.markdown, article .markdown, main article";
+  const ROOT_SELECTOR = ".theme-doc-markdown.markdown, article .markdown";
+  let cachedOverride = null;
+  let appliedHtml = "";
 
   function routePath() {
     const path = window.location.pathname.replace(/\/+$/, "");
@@ -16,15 +18,27 @@
       .replace(/'/g, "&#039;");
   }
 
-  function apply(override) {
-    const root = document.querySelector(ROOT_SELECTOR);
-    if (!root || !override || !override.html) return;
+  function renderHtml(override) {
     const description = override.description ? `<p class="cms-live-description">${escapeHtml(override.description)}</p>` : "";
-    root.innerHTML = `<header class="cms-live-header"><h1>${escapeHtml(override.title)}</h1>${description}</header>${override.html}`;
+    return `<header class="cms-live-header"><h1>${escapeHtml(override.title)}</h1>${description}</header>${override.html}`;
+  }
+
+  function apply() {
+    const override = cachedOverride;
+    const root = document.querySelector(ROOT_SELECTOR);
+    if (!root || !override || !override.html) return false;
+
+    const nextHtml = renderHtml(override);
+    if (root.innerHTML !== nextHtml) root.innerHTML = nextHtml;
+    appliedHtml = nextHtml;
+
     document.title = `${override.title} | 자신있나 파트너 가이드`;
-    const activeMenu = document.querySelector(".menu__link--active, .breadcrumbs__link[aria-current='page']");
-    if (activeMenu) activeMenu.textContent = override.title;
+    const activeItems = document.querySelectorAll(".menu__link--active, .breadcrumbs__link[aria-current='page']");
+    activeItems.forEach((item) => {
+      item.textContent = override.title;
+    });
     document.documentElement.setAttribute("data-cms-live", "true");
+    return true;
   }
 
   async function load() {
@@ -34,7 +48,16 @@
       const res = await fetch(`/api/guide/override?path=${encodeURIComponent(path)}&t=${Date.now()}`, {cache: "no-store"});
       if (!res.ok) return;
       const data = await res.json();
-      if (data.override) apply(data.override);
+      if (!data.override) return;
+      cachedOverride = data.override;
+      apply();
+      [100, 400, 900, 1800, 3200].forEach((delay) => window.setTimeout(apply, delay));
+      const observer = new MutationObserver(() => {
+        const root = document.querySelector(ROOT_SELECTOR);
+        if (root && appliedHtml && root.innerHTML !== appliedHtml) apply();
+      });
+      observer.observe(document.body, {childList: true, subtree: true});
+      window.setTimeout(() => observer.disconnect(), 6000);
     } catch {}
   }
 
