@@ -1,8 +1,3 @@
 name = "jasinitna-partner-guide"
 pages_build_output_dir = "./build"
 compatibility_date = "2026-06-28"
-
-[[d1_databases]]
-binding = "GUIDE_DB"
-database_name = "jasinitna_partner_guide_db"
-database_id = "ef65aa8a-a0e0-42fc-8e12-dc67ac613a98"
