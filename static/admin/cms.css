@@ -467,6 +467,31 @@ body.is-login .cms-main {
   background: #fff7f7;
 }
 
+.cms-edit-panel.is-source-mode .cms-toolbar,
+.cms-edit-panel.is-source-mode .cms-body-label,
+.cms-edit-panel.is-source-mode .cms-rich-editor {
+  display: none;
+}
+
+.cms-edit-panel.is-source-mode .cms-advanced {
+  margin-top: 4px;
+  border-color: var(--line-strong);
+  background: #ffffff;
+}
+
+.cms-edit-panel.is-source-mode .cms-advanced summary {
+  cursor: default;
+}
+
+.cms-edit-panel.is-source-mode .cms-advanced > p {
+  padding-bottom: 14px;
+  color: #374151;
+}
+
+.cms-edit-panel.is-source-mode #content-input {
+  min-height: calc(100vh - 390px);
+}
+
 .cms-rich-editor h2,
 .cms-preview h2 {
   margin: 30px 0 12px;
