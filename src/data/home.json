@@ -94,7 +94,7 @@
       "description": "병원에서 자주 묻는 질문을 모았어요.",
       "link": "/docs/faq/overview",
       "icon": "faq",
-      "guideCount": 2
+      "guideCount": 1
     },
     {
       "title": "용어 사전",
@@ -392,12 +392,6 @@
       "description": "자신있나 운영과 광고에서 자주 쓰는 용어를 정리했어요.",
       "category": "용어 사전",
       "link": "/docs/glossary/overview"
-    },
-    {
-      "title": "CMS ???? ?? 1782710229424",
-      "description": "CMS ????? ?? ???? ?? ??? ????? ???? ?? ????.",
-      "category": "FAQ",
-      "link": "/docs/faq/cms-publish-test-1782710229424"
     }
   ]
 }
