@@ -103,8 +103,8 @@ function requireEnv(env) {
   if (!String(env.CMS_ID || "").trim() || !String(env.CMS_PASSWORD || "").trim()) {
     return "CMS 계정 환경변수가 설정되지 않았습니다.";
   }
-  if (!String(env.GITHUB_TOKEN || "").trim()) {
-    return "GitHub 저장 토큰이 설정되지 않았습니다.";
+  if (!env.GUIDE_DB && !env.DB) {
+    return "Cloudflare D1 GUIDE_DB가 연결되지 않았습니다.";
   }
   return "";
 }

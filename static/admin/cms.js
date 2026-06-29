@@ -1,12 +1,12 @@
 const state = {
   documents: [],
+  categories: [],
   activePath: "",
-  activeSha: "",
-  originalBody: "",
-  bodyEdited: false,
-  dirty: false,
-  view: "documents",
+  activeDocument: null,
+  blocks: [],
   settings: null,
+  view: "documents",
+  dirty: false,
   sessionCheckTimer: null,
 };
 
@@ -19,40 +19,33 @@ const els = {
   loginPassword: document.querySelector("#login-password"),
   logoutButton: document.querySelector("#logout-button"),
   saveButton: document.querySelector("#save-button"),
+  openPublicLink: document.querySelector("#open-public-link"),
   newDocButton: document.querySelector("#new-doc-button"),
   searchInput: document.querySelector("#search-input"),
   documentList: document.querySelector("#document-list"),
   currentTitle: document.querySelector("#current-title"),
   currentPath: document.querySelector("#current-path"),
   saveState: document.querySelector("#save-state"),
-  pathInput: document.querySelector("#path-input"),
-  messageInput: document.querySelector("#message-input"),
-  contentInput: document.querySelector("#content-input"),
   titleInput: document.querySelector("#title-input"),
   descriptionInput: document.querySelector("#description-input"),
+  categoryInput: document.querySelector("#category-input"),
   statusInput: document.querySelector("#status-input"),
-  ownerInput: document.querySelector("#owner-input"),
-  bodyEditor: document.querySelector("#body-editor"),
-  previewOutput: document.querySelector("#preview-output"),
+  positionInput: document.querySelector("#position-input"),
+  pathInput: document.querySelector("#path-input"),
+  blockEditor: document.querySelector("#block-editor"),
   livePreviewFrame: document.querySelector("#live-preview-frame"),
-  documentImageInput: document.querySelector("#document-image-input"),
   viewButtons: document.querySelectorAll("[data-view]"),
   documentsView: document.querySelector("#documents-view"),
   settingsView: document.querySelector("#settings-view"),
   imagesView: document.querySelector("#images-view"),
   siteTitleInput: document.querySelector("#site-title-input"),
   siteTaglineInput: document.querySelector("#site-tagline-input"),
-  siteUrlInput: document.querySelector("#site-url-input"),
   siteLogoInput: document.querySelector("#site-logo-input"),
-  siteFaviconInput: document.querySelector("#site-favicon-input"),
-  siteFooterInput: document.querySelector("#site-footer-input"),
-  homeBannerImageInput: document.querySelector("#home-banner-image-input"),
   homeBannerTitleInput: document.querySelector("#home-banner-title-input"),
   homeBannerDescriptionInput: document.querySelector("#home-banner-description-input"),
   homeSearchPlaceholderInput: document.querySelector("#home-search-placeholder-input"),
   homeButtonTextInput: document.querySelector("#home-button-text-input"),
   homeButtonLinkInput: document.querySelector("#home-button-link-input"),
-  homeJsonInput: document.querySelector("#home-json-input"),
   imageFileInput: document.querySelector("#image-file-input"),
   imageUploadButton: document.querySelector("#image-upload-button"),
   imageUploadResult: document.querySelector("#image-upload-result"),
@@ -64,13 +57,6 @@ function setStatus(message, type = "") {
   els.saveState.className = `cms-state${type ? ` is-${type}` : ""}`;
 }
 
-function deployStatusMessage(savedText, deploy) {
-  if (!deploy) return savedText;
-  if (deploy.skipped) return `${savedText} · 변경 없음`;
-  if (deploy.triggered) return `${savedText} · 배포 요청됨`;
-  return `${savedText} · 자동 배포 설정 필요`;
-}
-
 function setMode(mode) {
   document.body.classList.remove("cms-booting", "is-login", "is-authenticated");
   document.body.classList.add(mode);
@@ -79,21 +65,24 @@ function setMode(mode) {
 async function api(path, options = {}) {
   const response = await fetch(path, {
     credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
+    headers: {"Content-Type": "application/json", ...(options.headers || {})},
     ...options,
   });
   const text = await response.text();
   const data = text ? JSON.parse(text) : {};
   if (!response.ok) {
-    if (response.status === 401 && !path.endsWith("/login")) {
-      forceLogout("세션이 만료됐어요. 다시 로그인해 주세요.");
-    }
+    if (response.status === 401 && !path.endsWith("/login")) forceLogout("세션이 만료됐어요. 다시 로그인해 주세요.");
     throw new Error(data.error || "요청을 처리하지 못했어요.");
   }
   return data;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function startSessionWatch() {
@@ -112,282 +101,8 @@ function stopSessionWatch() {
   state.sessionCheckTimer = null;
 }
 
-function setView(view) {
-  state.view = view;
-  els.documentsView.hidden = view !== "documents";
-  els.settingsView.hidden = view !== "settings";
-  els.imagesView.hidden = view !== "images";
-  els.newDocButton.hidden = view !== "documents";
-  els.saveButton.textContent = view === "settings" ? "설정 저장" : "저장";
-
-  els.viewButtons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.view === view);
-  });
-
-  if (view === "documents") {
-    els.currentTitle.textContent = els.titleInput.value || "문서 관리";
-    els.currentPath.textContent = state.activePath || "문서를 선택하세요.";
-  }
-  if (view === "settings") {
-    els.currentTitle.textContent = "사이트 설정";
-    els.currentPath.textContent = "사이트 기본 정보와 메인 화면을 관리해요.";
-    if (!state.settings) loadSettings().catch((error) => setStatus(error.message, "error"));
-  }
-  if (view === "images") {
-    els.currentTitle.textContent = "이미지 관리";
-    els.currentPath.textContent = "문서와 배너에 사용할 이미지를 업로드해요.";
-    loadImages().catch((error) => setStatus(error.message, "error"));
-  }
-}
-
-function escapeHtml(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function unquote(value = "") {
-  return String(value).replace(/^["']|["']$/g, "");
-}
-
-function parseFrontmatter(content) {
-  const match = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-  if (!match) return {fields: {}, body: content};
-
-  const fields = {};
-  match[1].split("\n").forEach((line) => {
-    const fieldMatch = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
-    if (fieldMatch) fields[fieldMatch[1]] = unquote(fieldMatch[2].trim());
-  });
-
-  return {fields, body: match[2] || ""};
-}
-
-function serializeFrontmatter(fields, body) {
-  const frontmatter = [
-    "---",
-    `title: ${JSON.stringify(fields.title || "새 가이드 문서")}`,
-    `description: ${JSON.stringify(fields.description || "")}`,
-    `sidebar_position: ${fields.sidebar_position || 99}`,
-    `owner: ${JSON.stringify(fields.owner || "자신있나 파트너스")}`,
-    `review_status: ${JSON.stringify(fields.review_status || "검토 필요")}`,
-    `reviewed_at: ${fields.reviewed_at || new Date().toISOString().slice(0, 10)}`,
-    `review_due_at: ${fields.review_due_at || ""}`,
-    ...(fields.draft ? [`draft: ${fields.draft}`] : []),
-    "---",
-    "",
-  ];
-  return `${frontmatter.join("\n")}${body.trim()}\n`;
-}
-
-function simplifyMdx(body) {
-  return body
-    .replace(/<h([1-3])>(.*?)<\/h\1>/g, (_, level, text) => `${"#".repeat(Number(level))} ${text}`)
-    .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
-    .replace(/<p>(.*?)<\/p>/g, "$1\n")
-    .replace(/<li>(.*?)<\/li>/g, "- $1")
-    .replace(/<tr><td>(.*?)<\/td><td>(.*?)<\/td><\/tr>/g, "- $1: $2")
-    .replace(/<tr><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><\/tr>/g, "- $1: $2 / $3")
-    .replace(/<[^>]+>/g, "")
-    .replace(/^\s+$/gm, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-function hasDesignMdx(body) {
-  return /<div\s|className=|<table[\s>]|guide-visual|guide-playbook|visual-screen/.test(body);
-}
-
-function stripTags(value = "") {
-  return value.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-}
-
-function getVisibleHeading(body) {
-  const htmlHeading = body.match(/<h1([^>]*)>([\s\S]*?)<\/h1>/i);
-  if (htmlHeading) return stripTags(htmlHeading[2]);
-
-  const markdownHeading = body.match(/^#\s+(.+)$/m);
-  return markdownHeading ? stripTags(markdownHeading[1]) : "";
-}
-
-function syncVisibleHeading(body, title) {
-  const cleanTitle = title.trim();
-  if (!cleanTitle) return body;
-
-  if (/<h1([^>]*)>[\s\S]*?<\/h1>/i.test(body)) {
-    return body.replace(/<h1([^>]*)>[\s\S]*?<\/h1>/i, `<h1$1>${escapeHtml(cleanTitle)}</h1>`);
-  }
-
-  if (/^#\s+.+$/m.test(body)) {
-    return body.replace(/^#\s+.+$/m, `# ${cleanTitle}`);
-  }
-
-  return `<h1>${escapeHtml(cleanTitle)}</h1>\n\n${body.trim()}\n`;
-}
-
-function markdownToHtml(markdown) {
-  const lines = markdown.split("\n");
-  let html = "";
-  let listType = "";
-
-  const closeList = () => {
-    if (listType) {
-      html += `</${listType}>`;
-      listType = "";
-    }
-  };
-
-  lines.forEach((rawLine) => {
-    const line = rawLine.trim();
-    if (!line) {
-      closeList();
-      return;
-    }
-
-    if (line.startsWith("### ")) {
-      closeList();
-      html += `<h3>${formatInline(line.slice(4))}</h3>`;
-      return;
-    }
-    if (line.startsWith("## ")) {
-      closeList();
-      html += `<h2>${formatInline(line.slice(3))}</h2>`;
-      return;
-    }
-    if (line.startsWith("# ")) {
-      closeList();
-      html += `<h2>${formatInline(line.slice(2))}</h2>`;
-      return;
-    }
-    if (/^\d+\.\s+/.test(line)) {
-      if (listType !== "ol") {
-        closeList();
-        html += "<ol>";
-        listType = "ol";
-      }
-      html += `<li>${formatInline(line.replace(/^\d+\.\s+/, ""))}</li>`;
-      return;
-    }
-    if (/^!\[(.*?)\]\((.*?)\)$/.test(line)) {
-      closeList();
-      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
-      html += `<figure><img src="${escapeHtml(imageMatch[2])}" alt="${escapeHtml(imageMatch[1] || "")}" /><figcaption>${escapeHtml(imageMatch[1] || "이미지")}</figcaption></figure>`;
-      return;
-    }
-    if (line.startsWith("- ")) {
-      if (listType !== "ul") {
-        closeList();
-        html += "<ul>";
-        listType = "ul";
-      }
-      html += `<li>${formatInline(line.slice(2))}</li>`;
-      return;
-    }
-
-    closeList();
-    html += `<p>${formatInline(line)}</p>`;
-  });
-
-  closeList();
-  return html || "<p>본문을 입력하세요.</p>";
-}
-
-function formatInline(text) {
-  return escapeHtml(text).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-}
-
-function htmlToMarkdown(root) {
-  const lines = [];
-
-  root.childNodes.forEach((node) => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent.trim();
-      if (text) lines.push(text);
-      return;
-    }
-
-    if (node.nodeType !== Node.ELEMENT_NODE) return;
-    const tag = node.tagName.toLowerCase();
-    const text = node.innerText.trim();
-
-    if (!text) return;
-    if (tag === "h1" || tag === "h2") lines.push(`## ${text}`);
-    else if (tag === "h3") lines.push(`### ${text}`);
-    else if (tag === "ul") {
-      Array.from(node.querySelectorAll("li")).forEach((li) => lines.push(`- ${li.innerText.trim()}`));
-    } else if (tag === "ol") {
-      Array.from(node.querySelectorAll("li")).forEach((li, index) => lines.push(`${index + 1}. ${li.innerText.trim()}`));
-    } else if (tag === "figure") {
-      const img = node.querySelector("img");
-      if (img) lines.push(`![${img.alt || "이미지"}](${img.getAttribute("src") || ""})`);
-    } else if (tag === "img") {
-      lines.push(`![${node.alt || "이미지"}](${node.getAttribute("src") || ""})`);
-    } else if (node.classList.contains("cms-note-block")) {
-      lines.push(`> ${text}`);
-    } else {
-      lines.push(text);
-    }
-  });
-
-  return lines.join("\n\n").trim();
-}
-
-function getTitleFromMarkdown(path, content) {
-  const {fields} = parseFrontmatter(content);
-  return fields.title || path.split("/").pop().replace(/\.md$/, "");
-}
-
 function docPathToUrl(path) {
-  if (!path || !path.startsWith("docs/")) return "";
-  return `/${path.replace(/\.md$/, "")}`;
-}
-
-function setLivePreview(path) {
-  const url = docPathToUrl(path);
-  if (!url) {
-    els.livePreviewFrame.removeAttribute("src");
-    return;
-  }
-  els.livePreviewFrame.src = `${url}?cmsPreview=${Date.now()}`;
-}
-
-function renderDocuments() {
-  const keyword = els.searchInput.value.trim().toLowerCase();
-  const filtered = state.documents.filter((doc) => {
-    const haystack = `${doc.title} ${doc.path} ${doc.description || ""}`.toLowerCase();
-    return !keyword || haystack.includes(keyword);
-  });
-
-  els.documentList.innerHTML = "";
-  filtered.forEach((doc) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `cms-doc-item${doc.path === state.activePath ? " is-active" : ""}`;
-    button.innerHTML = `<strong></strong><span></span>`;
-    button.querySelector("strong").textContent = doc.title;
-    button.querySelector("span").textContent = doc.path;
-    button.addEventListener("click", () => openDocument(doc.path));
-    els.documentList.append(button);
-  });
-}
-
-function refreshPreview() {
-  const title = els.titleInput.value.trim() || "문서 제목";
-  const description = els.descriptionInput.value.trim();
-  els.previewOutput.innerHTML = `
-    <h1>${escapeHtml(title)}</h1>
-    ${description ? `<p class="cms-preview-description">${escapeHtml(description)}</p>` : ""}
-    ${els.bodyEditor.innerHTML}
-  `;
-}
-
-function markDirty(bodyEdited = false) {
-  state.dirty = true;
-  if (bodyEdited) state.bodyEdited = true;
-  setStatus("수정 중");
-  refreshPreview();
+  return `/${String(path || "").replace(/\.md$/, "")}`;
 }
 
 function showEditor() {
@@ -395,6 +110,7 @@ function showEditor() {
   els.editorPanel.hidden = false;
   els.logoutButton.hidden = false;
   els.saveButton.hidden = false;
+  els.openPublicLink.hidden = false;
   setMode("is-authenticated");
   startSessionWatch();
 }
@@ -404,16 +120,17 @@ function showLogin(message = "") {
   els.editorPanel.hidden = true;
   els.logoutButton.hidden = true;
   els.saveButton.hidden = true;
+  els.openPublicLink.hidden = true;
   setMode("is-login");
   state.documents = [];
   state.activePath = "";
-  state.activeSha = "";
+  state.activeDocument = null;
+  state.blocks = [];
   state.dirty = false;
-  state.settings = null;
   stopSessionWatch();
   els.documentList.innerHTML = "";
   els.currentTitle.textContent = "로그인이 필요합니다";
-  els.currentPath.textContent = "마스터 계정으로 접속하면 문서를 수정할 수 있어요.";
+  els.currentPath.textContent = "관리자 계정으로 로그인해 주세요.";
   els.loginError.textContent = message;
 }
 
@@ -422,89 +139,349 @@ function forceLogout(message) {
   setStatus("로그아웃됨");
 }
 
+function setView(view) {
+  state.view = view;
+  els.documentsView.hidden = view !== "documents";
+  els.settingsView.hidden = view !== "settings";
+  els.imagesView.hidden = view !== "images";
+  els.newDocButton.hidden = view !== "documents";
+  els.saveButton.textContent = view === "settings" ? "설정 저장" : "저장";
+  els.viewButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.view === view));
+
+  if (view === "settings") {
+    els.currentTitle.textContent = "메인/설정";
+    els.currentPath.textContent = "메인 배너와 사이트 문구를 관리해요.";
+    loadSettings().catch((error) => setStatus(error.message, "error"));
+  }
+  if (view === "images") {
+    els.currentTitle.textContent = "이미지";
+    els.currentPath.textContent = "필요한 작은 이미지를 관리해요.";
+    loadImages().catch((error) => setStatus(error.message, "error"));
+  }
+  if (view === "documents" && state.activeDocument) {
+    els.currentTitle.textContent = state.activeDocument.title;
+    els.currentPath.textContent = state.activeDocument.path;
+  }
+}
+
+async function loadBootstrap() {
+  const data = await api("/api/guide/bootstrap");
+  state.categories = data.categories || [];
+  renderCategoryOptions();
+}
+
+function renderCategoryOptions() {
+  els.categoryInput.innerHTML = state.categories
+    .map((category) => `<option value="${escapeHtml(category.slug)}">${escapeHtml(category.title)}</option>`)
+    .join("");
+}
+
 async function loadDocuments(options = {}) {
   if (!options.silent) setStatus("문서 불러오는 중");
   const data = await api("/api/cms/documents");
-  state.documents = data.documents;
+  state.documents = data.documents || [];
   renderDocuments();
-  if (!options.silent) setStatus("불러옴", "ok");
+  if (!options.silent) setStatus("문서 불러옴", "ok");
   if (state.documents.length && !state.activePath) await openDocument(state.documents[0].path);
+}
+
+function renderDocuments() {
+  const keyword = els.searchInput.value.trim().toLowerCase();
+  const filtered = state.documents.filter((doc) => {
+    const haystack = `${doc.title} ${doc.path} ${doc.category || ""} ${doc.description || ""}`.toLowerCase();
+    return !keyword || haystack.includes(keyword);
+  });
+
+  els.documentList.innerHTML = filtered
+    .map(
+      (doc) =>
+        `<button type="button" class="cms-doc-item${doc.path === state.activePath ? " is-active" : ""}" data-path="${escapeHtml(
+          doc.path,
+        )}"><strong>${escapeHtml(doc.title)}</strong><span>${escapeHtml(doc.category || doc.path)}</span></button>`,
+    )
+    .join("");
+
+  els.documentList.querySelectorAll("[data-path]").forEach((button) => {
+    button.addEventListener("click", () => openDocument(button.dataset.path));
+  });
+}
+
+function markDirty() {
+  state.dirty = true;
+  setStatus("수정 중");
+}
+
+function normalizeBlock(block) {
+  return {
+    id: block.id || crypto.randomUUID(),
+    type: block.type || "heading",
+    title: block.title || "",
+    text: block.text || "",
+    html: block.html || "",
+    items: Array.isArray(block.items) ? block.items : [],
+    rows: Array.isArray(block.rows) ? block.rows : [],
+  };
+}
+
+function defaultBlock(type) {
+  const id = crypto.randomUUID();
+  if (type === "mockup") {
+    return {
+      id,
+      type,
+      title: "화면에서 이렇게 확인해요",
+      text: "담당자가 확인해야 하는 핵심 영역을 순서대로 보여줘요.",
+      rows: [
+        {label: "상태 확인", value: "확인"},
+        {label: "필수 입력", value: "작성"},
+        {label: "저장", value: "완료"},
+      ],
+    };
+  }
+  if (type === "steps") {
+    return {
+      id,
+      type,
+      title: "진행 순서",
+      items: [
+        {title: "첫 번째 단계", text: "담당자가 먼저 확인할 내용을 적어 주세요."},
+        {title: "두 번째 단계", text: "다음으로 처리할 내용을 적어 주세요."},
+      ],
+    };
+  }
+  if (type === "checklist") return {id, type, title: "체크리스트", items: [{text: "확인할 항목을 적어 주세요."}]};
+  if (type === "faq") return {id, type, title: "자주 묻는 질문", items: [{question: "질문을 적어 주세요.", answer: "답변을 적어 주세요."}]};
+  if (type === "note") return {id, type, title: "주의사항", text: "병원이 놓치면 안 되는 내용을 적어 주세요."};
+  return {id, type: "heading", title: "문단 제목", text: "본문 내용을 적어 주세요."};
+}
+
+function blockTitle(type) {
+  return {
+    html: "기존 디자인 블록",
+    heading: "문단",
+    mockup: "화면 목업",
+    steps: "순서도",
+    checklist: "체크리스트",
+    faq: "FAQ",
+    note: "주의사항",
+  }[type] || "블록";
+}
+
+function rowsToText(rows, type) {
+  if (type === "mockup") return (rows || []).map((row) => `${row.label || ""}|${row.value || ""}`).join("\n");
+  if (type === "faq") return (rows || []).map((row) => `${row.question || ""}|${row.answer || ""}`).join("\n");
+  if (type === "steps") return (rows || []).map((row) => `${row.title || ""}|${row.text || ""}`).join("\n");
+  return (rows || []).map((row) => row.text || row).join("\n");
+}
+
+function textToRows(value, type) {
+  return String(value || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [first, ...rest] = line.split("|");
+      const second = rest.join("|");
+      if (type === "mockup") return {label: first.trim(), value: second.trim() || "확인"};
+      if (type === "faq") return {question: first.trim(), answer: second.trim()};
+      if (type === "steps") return {title: first.trim(), text: second.trim()};
+      return {text: line};
+    });
+}
+
+function renderBlocks() {
+  els.blockEditor.innerHTML = state.blocks
+    .map((block, index) => {
+      const rowsValue =
+        block.type === "mockup"
+          ? rowsToText(block.rows, "mockup")
+          : ["steps", "checklist", "faq"].includes(block.type)
+            ? rowsToText(block.items, block.type)
+            : "";
+      return `<section class="cms-block-card" data-block-id="${escapeHtml(block.id)}">
+        <div class="cms-block-card__head">
+          <strong>${index + 1}. ${blockTitle(block.type)}</strong>
+          <div>
+            <button type="button" data-move-block="up">위</button>
+            <button type="button" data-move-block="down">아래</button>
+            <button type="button" data-remove-block>삭제</button>
+          </div>
+        </div>
+        ${
+          block.type === "html"
+            ? `<label><span>기존 디자인 원문</span><textarea data-field="html" rows="12">${escapeHtml(block.html || block.text)}</textarea></label>`
+            : `<label><span>제목</span><input data-field="title" value="${escapeHtml(block.title)}" /></label>`
+        }
+        ${block.type !== "html" && !["steps", "checklist", "faq", "mockup"].includes(block.type) ? `<label><span>내용</span><textarea data-field="text" rows="5">${escapeHtml(block.text)}</textarea></label>` : ""}
+        ${block.type === "mockup" ? `<label><span>설명</span><textarea data-field="text" rows="3">${escapeHtml(block.text)}</textarea></label>` : ""}
+        ${["steps", "checklist", "faq", "mockup"].includes(block.type) ? `<label><span>항목</span><textarea data-field="rows" rows="6">${escapeHtml(rowsValue)}</textarea><small>${block.type === "faq" ? "질문|답변 형식" : block.type === "mockup" ? "왼쪽 문구|상태 형식" : block.type === "steps" ? "단계명|설명 형식" : "한 줄에 항목 하나"}</small></label>` : ""}
+      </section>`;
+    })
+    .join("");
+
+  els.blockEditor.querySelectorAll("[data-field]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const card = input.closest("[data-block-id]");
+      const block = state.blocks.find((item) => item.id === card.dataset.blockId);
+      if (!block) return;
+      if (input.dataset.field === "rows") {
+        if (block.type === "mockup") block.rows = textToRows(input.value, "mockup");
+        else block.items = textToRows(input.value, block.type);
+      } else {
+        block[input.dataset.field] = input.value;
+      }
+      markDirty();
+    });
+  });
+
+  els.blockEditor.querySelectorAll("[data-remove-block]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.closest("[data-block-id]").dataset.blockId;
+      state.blocks = state.blocks.filter((block) => block.id !== id);
+      markDirty();
+      renderBlocks();
+    });
+  });
+
+  els.blockEditor.querySelectorAll("[data-move-block]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.closest("[data-block-id]").dataset.blockId;
+      const index = state.blocks.findIndex((block) => block.id === id);
+      const direction = button.dataset.moveBlock === "up" ? -1 : 1;
+      const next = index + direction;
+      if (index < 0 || next < 0 || next >= state.blocks.length) return;
+      [state.blocks[index], state.blocks[next]] = [state.blocks[next], state.blocks[index]];
+      markDirty();
+      renderBlocks();
+    });
+  });
+}
+
+async function openDocument(path) {
+  if (state.dirty && !window.confirm("저장하지 않은 수정 내용이 있어요. 다른 문서로 이동할까요?")) return;
+  setStatus("문서 여는 중");
+  const data = await api(`/api/cms/document?path=${encodeURIComponent(path)}`);
+  const doc = data.document;
+  state.activeDocument = doc;
+  state.activePath = doc.path;
+  state.blocks = (doc.blocks?.length ? doc.blocks : [{id: crypto.randomUUID(), type: "html", title: "기존 문서", html: doc.body || ""}]).map(normalizeBlock);
+  state.dirty = false;
+
+  els.titleInput.value = doc.title || "";
+  els.descriptionInput.value = doc.description || "";
+  els.categoryInput.value = doc.categorySlug || "";
+  els.statusInput.value = doc.status || "published";
+  els.positionInput.value = doc.position || 99;
+  els.pathInput.value = doc.path || "";
+  els.currentTitle.textContent = doc.title || "문서";
+  els.currentPath.textContent = doc.path || "";
+  els.openPublicLink.href = docPathToUrl(doc.path);
+  els.livePreviewFrame.src = `${docPathToUrl(doc.path)}?cmsPreview=${Date.now()}`;
+  renderDocuments();
+  renderBlocks();
+  setStatus("문서 열림", "ok");
+}
+
+function collectDocument() {
+  return {
+    path: els.pathInput.value.trim(),
+    title: els.titleInput.value.trim(),
+    description: els.descriptionInput.value.trim(),
+    categorySlug: els.categoryInput.value,
+    status: els.statusInput.value,
+    position: Number(els.positionInput.value || 99),
+    owner: "자신있나 파트너스",
+    body: "",
+    blocks: state.blocks,
+  };
+}
+
+async function saveDocument() {
+  const payload = collectDocument();
+  if (!payload.path || !payload.title) {
+    setStatus("제목과 경로를 입력해 주세요", "error");
+    return;
+  }
+
+  setStatus("저장 중");
+  els.saveButton.disabled = true;
+  const data = await api("/api/cms/document", {method: "PUT", body: JSON.stringify(payload)});
+  state.activeDocument = data.document;
+  state.activePath = data.document.path;
+  state.blocks = (data.document.blocks || []).map(normalizeBlock);
+  state.dirty = false;
+  els.currentTitle.textContent = data.document.title;
+  els.currentPath.textContent = data.document.path;
+  els.openPublicLink.href = docPathToUrl(data.document.path);
+  els.livePreviewFrame.src = `${docPathToUrl(data.document.path)}?saved=${Date.now()}`;
+  await loadDocuments({silent: true});
+  setStatus("저장됨 · 공개 페이지에 바로 반영됐어요", "ok");
+  els.saveButton.disabled = false;
+}
+
+function createNewDocument() {
+  if (state.dirty && !window.confirm("저장하지 않은 수정 내용이 있어요. 새 문서를 만들까요?")) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const category = state.categories[0]?.slug || "start";
+  state.activePath = "";
+  state.activeDocument = null;
+  state.blocks = [defaultBlock("mockup"), defaultBlock("steps"), defaultBlock("checklist")];
+  state.dirty = true;
+  els.titleInput.value = "새 가이드 문서";
+  els.descriptionInput.value = "병원이 이 문서에서 무엇을 따라 하면 되는지 적어 주세요.";
+  els.categoryInput.value = category;
+  els.statusInput.value = "draft";
+  els.positionInput.value = 99;
+  els.pathInput.value = `docs/${category}/new-guide-${today}.md`;
+  els.currentTitle.textContent = "새 가이드 문서";
+  els.currentPath.textContent = els.pathInput.value;
+  els.livePreviewFrame.removeAttribute("src");
+  renderBlocks();
+  setStatus("작성 중");
 }
 
 async function loadSettings() {
   setStatus("설정 불러오는 중");
-  state.settings = await api("/api/cms/settings");
-  const site = state.settings.site.value;
-  const home = state.settings.home.value;
-  const banner = home.banners?.[0] || {};
-
-  els.siteTitleInput.value = site.title || "";
-  els.siteTaglineInput.value = site.tagline || "";
-  els.siteUrlInput.value = site.url || "";
-  els.siteLogoInput.value = site.logo || "";
-  els.siteFaviconInput.value = site.favicon || "";
-  els.siteFooterInput.value = site.footerCopyright || "";
-  els.homeBannerImageInput.value = banner.image || "";
+  const data = await api("/api/cms/settings");
+  state.settings = {site: data.site.value, home: data.home.value};
+  const banner = state.settings.home.banner || {};
+  els.siteTitleInput.value = state.settings.site.title || "";
+  els.siteTaglineInput.value = state.settings.site.tagline || "";
+  els.siteLogoInput.value = state.settings.site.logo || "";
   els.homeBannerTitleInput.value = banner.title || "";
   els.homeBannerDescriptionInput.value = banner.description || "";
   els.homeSearchPlaceholderInput.value = banner.searchPlaceholder || "";
   els.homeButtonTextInput.value = banner.buttonText || "";
   els.homeButtonLinkInput.value = banner.buttonLink || "";
-  els.homeJsonInput.value = JSON.stringify(home, null, 2);
   setStatus("설정 불러옴", "ok");
 }
 
 async function saveSettings() {
-  if (!state.settings) await loadSettings();
-
-  let home;
-  try {
-    home = JSON.parse(els.homeJsonInput.value);
-  } catch {
-    setStatus("홈 JSON 형식 오류", "error");
-    return;
-  }
-
-  home.banners = home.banners?.length ? home.banners : [{}];
-  home.banners[0] = {
-    ...home.banners[0],
-    image: els.homeBannerImageInput.value.trim(),
-    title: els.homeBannerTitleInput.value.trim(),
-    description: els.homeBannerDescriptionInput.value.trim(),
-    searchPlaceholder: els.homeSearchPlaceholderInput.value.trim(),
-    buttonText: els.homeButtonTextInput.value.trim(),
-    buttonLink: els.homeButtonLinkInput.value.trim(),
-  };
-
   const site = {
-    ...state.settings.site.value,
+    ...(state.settings?.site || {}),
     title: els.siteTitleInput.value.trim(),
     tagline: els.siteTaglineInput.value.trim(),
-    url: els.siteUrlInput.value.trim(),
-    logo: els.siteLogoInput.value.trim(),
-    favicon: els.siteFaviconInput.value.trim(),
-    footerCopyright: els.siteFooterInput.value.trim(),
+    logo: els.siteLogoInput.value.trim() || "/img/logo.svg",
+  };
+  const home = {
+    ...(state.settings?.home || {}),
+    banner: {
+      ...(state.settings?.home?.banner || {}),
+      title: els.homeBannerTitleInput.value.trim(),
+      description: els.homeBannerDescriptionInput.value.trim(),
+      searchPlaceholder: els.homeSearchPlaceholderInput.value.trim(),
+      buttonText: els.homeButtonTextInput.value.trim(),
+      buttonLink: els.homeButtonLinkInput.value.trim(),
+    },
   };
 
   setStatus("설정 저장 중");
-  const result = await api("/api/cms/settings", {
+  const data = await api("/api/cms/settings", {
     method: "PUT",
-    body: JSON.stringify({
-      site: {value: site, sha: state.settings.site.sha},
-      home: {value: home, sha: state.settings.home.sha},
-    }),
+    body: JSON.stringify({site: {value: site}, home: {value: home}}),
   });
-
-  if (result.site?.sha) state.settings.site.sha = result.site.sha;
-  if (result.home?.sha) state.settings.home.sha = result.home.sha;
-  state.settings.site.value = site;
-  state.settings.home.value = home;
-  els.homeJsonInput.value = JSON.stringify(home, null, 2);
-  setStatus(deployStatusMessage("설정 저장됨", result.deploy), result.deploy?.triggered ? "ok" : "error");
-}
-
-function markSettingsDirty() {
-  setStatus("설정 수정 중");
+  state.settings = data.settings;
+  setStatus("설정 저장됨 · 공개 메인에 바로 반영됐어요", "ok");
 }
 
 async function fileToBase64(file) {
@@ -520,48 +497,17 @@ async function fileToBase64(file) {
 async function loadImages() {
   setStatus("이미지 불러오는 중");
   const data = await api("/api/cms/images");
-  renderImages(data.images || []);
+  els.imageList.innerHTML = (data.images || []).length
+    ? data.images
+        .map(
+          (image) =>
+            `<div class="cms-image-item"><img src="${escapeHtml(image.url)}" alt="" /><div><strong>${escapeHtml(
+              image.name,
+            )}</strong><input readonly value="${escapeHtml(image.url)}" /></div></div>`,
+        )
+        .join("")
+    : '<p class="cms-help-text">아직 업로드된 이미지가 없어요.</p>';
   setStatus("이미지 불러옴", "ok");
-}
-
-function renderImages(images) {
-  els.imageList.innerHTML = "";
-
-  if (!images.length) {
-    els.imageList.innerHTML = '<p class="cms-help-text">아직 업로드된 이미지가 없어요.</p>';
-    return;
-  }
-
-  images.forEach((image) => {
-    const item = document.createElement("div");
-    item.className = "cms-image-item";
-    item.innerHTML = `
-      <img src="${escapeHtml(image.url)}" alt="" loading="lazy" />
-      <div>
-        <strong>${escapeHtml(image.name)}</strong>
-        <input readonly value="${escapeHtml(image.url)}" />
-        <div class="cms-image-actions">
-          <button type="button" data-copy="${escapeHtml(image.url)}">경로 복사</button>
-          <button type="button" data-banner="${escapeHtml(image.url)}">배너에 사용</button>
-        </div>
-      </div>
-    `;
-    els.imageList.append(item);
-  });
-
-  els.imageList.querySelectorAll("[data-copy]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      await navigator.clipboard.writeText(button.dataset.copy).catch(() => {});
-      els.imageUploadResult.textContent = `복사됨: ${button.dataset.copy}`;
-    });
-  });
-  els.imageList.querySelectorAll("[data-banner]").forEach((button) => {
-    button.addEventListener("click", () => {
-      setView("settings");
-      els.homeBannerImageInput.value = button.dataset.banner;
-      markSettingsDirty();
-    });
-  });
 }
 
 async function uploadImage() {
@@ -570,182 +516,14 @@ async function uploadImage() {
     setStatus("이미지 선택 필요", "error");
     return;
   }
-
   setStatus("이미지 업로드 중");
   const result = await api("/api/cms/images", {
     method: "POST",
-    body: JSON.stringify({
-      name: file.name,
-      type: file.type,
-      content: await fileToBase64(file),
-    }),
+    body: JSON.stringify({name: file.name, type: file.type, content: await fileToBase64(file)}),
   });
-
-  els.imageUploadResult.textContent = deployStatusMessage(`업로드 완료: ${result.url}`, result.deploy);
+  els.imageUploadResult.textContent = `업로드 완료: ${result.url}`;
   els.imageFileInput.value = "";
   await loadImages();
-}
-
-async function uploadDocumentImage(file) {
-  if (!file) return;
-
-  setStatus("문서 이미지 업로드 중");
-  const result = await api("/api/cms/images", {
-    method: "POST",
-    body: JSON.stringify({
-      name: file.name,
-      type: file.type,
-      content: await fileToBase64(file),
-    }),
-  });
-
-  insertHtmlAtCursor(
-    `<figure><img src="${escapeHtml(result.url)}" alt="${escapeHtml(file.name.replace(/\.[^.]+$/, ""))}" /><figcaption>${escapeHtml(file.name)}</figcaption></figure>`,
-  );
-  markDirty(true);
-  setStatus(deployStatusMessage("이미지 삽입됨", result.deploy), result.deploy?.triggered ? "ok" : "");
-}
-
-function insertHtmlAtCursor(html) {
-  els.bodyEditor.focus();
-  const selection = window.getSelection();
-  if (!selection || !selection.rangeCount) {
-    els.bodyEditor.insertAdjacentHTML("beforeend", html);
-    return;
-  }
-
-  const range = selection.getRangeAt(0);
-  range.deleteContents();
-  const fragment = range.createContextualFragment(html);
-  range.insertNode(fragment);
-}
-
-async function openDocument(path) {
-  if (state.dirty && !window.confirm("저장하지 않은 수정 내용이 있어요. 다른 문서로 이동할까요?")) return;
-
-  setStatus("문서 여는 중");
-  const data = await api(`/api/cms/document?path=${encodeURIComponent(path)}`);
-  const parsed = parseFrontmatter(data.content);
-
-  state.activePath = data.path;
-  state.activeSha = data.sha || "";
-  state.originalBody = parsed.body;
-  state.bodyEdited = false;
-  state.dirty = false;
-  const isDesignDocument = hasDesignMdx(parsed.body);
-  const editPanel = els.bodyEditor.closest(".cms-edit-panel");
-  editPanel.classList.toggle("is-source-mode", isDesignDocument);
-
-  els.pathInput.value = data.path;
-  els.titleInput.value = getVisibleHeading(parsed.body) || parsed.fields.title || getTitleFromMarkdown(data.path, data.content);
-  els.descriptionInput.value = parsed.fields.description || "";
-  els.statusInput.value = parsed.fields.review_status || "게시 가능";
-  els.ownerInput.value = parsed.fields.owner || "자신있나 파트너스";
-  els.messageInput.value = `${els.titleInput.value} 수정`;
-  els.contentInput.value = data.content;
-  els.bodyEditor.contentEditable = isDesignDocument ? "false" : "true";
-  els.bodyEditor.classList.toggle("is-locked", isDesignDocument);
-  if (isDesignDocument) {
-    els.bodyEditor.innerHTML = "";
-    els.contentInput.closest("details").open = true;
-  } else {
-    els.bodyEditor.innerHTML = markdownToHtml(simplifyMdx(parsed.body));
-    els.contentInput.closest("details").open = false;
-  }
-  els.currentTitle.textContent = els.titleInput.value;
-  els.currentPath.textContent = data.path;
-  setLivePreview(data.path);
-
-  renderDocuments();
-  refreshPreview();
-  setStatus("문서 열림", "ok");
-}
-
-function composeContent() {
-  const parsed = parseFrontmatter(els.contentInput.value);
-  const fields = {
-    ...parsed.fields,
-    title: els.titleInput.value.trim(),
-    description: els.descriptionInput.value.trim(),
-    review_status: els.statusInput.value,
-    owner: els.ownerInput.value.trim(),
-  };
-  const body = syncVisibleHeading(state.bodyEdited ? htmlToMarkdown(els.bodyEditor) : state.originalBody || parsed.body, fields.title);
-  return serializeFrontmatter(fields, body);
-}
-
-async function saveDocument() {
-  const path = els.pathInput.value.trim();
-  if (!path) {
-    setStatus("경로 필요", "error");
-    return;
-  }
-
-  const content = composeContent();
-  els.contentInput.value = content;
-  setStatus("저장 중");
-  const data = await api("/api/cms/document", {
-    method: "PUT",
-    body: JSON.stringify({
-      path,
-      content,
-      message: els.messageInput.value.trim() || `${els.titleInput.value || "가이드"} 수정`,
-      sha: path === state.activePath ? state.activeSha : "",
-    }),
-  });
-
-  state.activePath = data.path;
-  state.activeSha = data.sha || "";
-  state.originalBody = parseFrontmatter(content).body;
-  state.bodyEdited = false;
-  state.dirty = false;
-  els.currentTitle.textContent = els.titleInput.value;
-  els.currentPath.textContent = path;
-  setLivePreview(path);
-  const savedMessage = deployStatusMessage("저장됨 · 공개 화면은 배포 완료 후 갱신돼요", data.deploy);
-  const savedType = data.deploy?.triggered || data.deploy?.skipped ? "ok" : "error";
-  setStatus(savedMessage, savedType);
-  await loadDocuments({silent: true});
-  setStatus(savedMessage, savedType);
-}
-
-async function saveCurrentView() {
-  if (state.view === "settings") {
-    await saveSettings();
-    return;
-  }
-  if (state.view === "images") {
-    setStatus("이미지는 업로드 즉시 저장돼요", "ok");
-    return;
-  }
-  await saveDocument();
-}
-
-function createNewDocument() {
-  if (state.dirty && !window.confirm("저장하지 않은 수정 내용이 있어요. 새 문서를 만들까요?")) return;
-
-  const today = new Date().toISOString().slice(0, 10);
-  state.activePath = "";
-  state.activeSha = "";
-  state.originalBody = "";
-  state.bodyEdited = true;
-  state.dirty = true;
-  els.bodyEditor.closest(".cms-edit-panel").classList.remove("is-source-mode");
-
-  els.pathInput.value = `docs/start/new-guide-${today}.md`;
-  els.titleInput.value = "새 가이드 문서";
-  els.descriptionInput.value = "병원 담당자가 쉽게 이해할 수 있도록 설명을 입력하세요.";
-  els.statusInput.value = "검토 필요";
-  els.ownerInput.value = "자신있나 파트너스";
-  els.messageInput.value = "새 가이드 문서 추가";
-  els.bodyEditor.innerHTML = "<h2>문서 제목</h2><p>여기에 병원이 실제로 따라 할 수 있는 안내를 작성해요.</p>";
-  els.contentInput.value = composeContent();
-  els.currentTitle.textContent = els.titleInput.value;
-  els.currentPath.textContent = els.pathInput.value;
-  els.livePreviewFrame.removeAttribute("src");
-  refreshPreview();
-  renderDocuments();
-  setStatus("작성 중");
 }
 
 async function login(event) {
@@ -761,7 +539,7 @@ async function login(event) {
     });
     els.loginPassword.value = "";
     showEditor();
-    setView("documents");
+    await loadBootstrap();
     await loadDocuments();
   } catch (error) {
     els.loginError.textContent = error.message;
@@ -773,37 +551,24 @@ async function login(event) {
 
 async function logout() {
   await api("/api/cms/logout", {method: "POST"}).catch(() => {});
-  state.documents = [];
-  state.activePath = "";
-  state.activeSha = "";
-  state.dirty = false;
-  els.documentList.innerHTML = "";
   showLogin();
   setStatus("로그아웃됨");
 }
 
-function applyCommand(command) {
-  els.bodyEditor.focus();
-  if (command === "bold") document.execCommand("bold");
-  if (command === "h2") document.execCommand("formatBlock", false, "h2");
-  if (command === "h3") document.execCommand("formatBlock", false, "h3");
-  if (command === "ul") document.execCommand("insertUnorderedList");
-  if (command === "ol") document.execCommand("insertOrderedList");
-  if (command === "note") {
-    document.execCommand("insertHTML", false, '<blockquote class="cms-note-block">확인해야 할 내용을 입력하세요.</blockquote>');
+async function saveCurrentView() {
+  if (state.view === "settings") return saveSettings();
+  if (state.view === "images") {
+    setStatus("이미지는 업로드 버튼으로 저장돼요", "ok");
+    return null;
   }
-  if (command === "image") {
-    els.documentImageInput.click();
-    return;
-  }
-  markDirty(true);
+  return saveDocument();
 }
 
 async function boot() {
   try {
     await api("/api/cms/me");
     showEditor();
-    setView("documents");
+    await loadBootstrap();
     await loadDocuments();
   } catch {
     showLogin();
@@ -813,57 +578,37 @@ async function boot() {
 
 els.loginForm.addEventListener("submit", login);
 els.logoutButton.addEventListener("click", logout);
-els.saveButton.addEventListener("click", () => saveCurrentView().catch((error) => setStatus(error.message, "error")));
+els.saveButton.addEventListener("click", () => saveCurrentView().catch((error) => {
+  els.saveButton.disabled = false;
+  setStatus(error.message, "error");
+}));
 els.newDocButton.addEventListener("click", createNewDocument);
 els.searchInput.addEventListener("input", renderDocuments);
-els.bodyEditor.addEventListener("input", () => markDirty(true));
-els.titleInput.addEventListener("input", () => {
-  els.currentTitle.textContent = els.titleInput.value || "문서 제목";
-  els.messageInput.value = `${els.titleInput.value || "가이드"} 수정`;
-  markDirty(false);
+els.viewButtons.forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
+document.querySelectorAll("[data-add-block]").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.blocks.push(defaultBlock(button.dataset.addBlock));
+    markDirty();
+    renderBlocks();
+  });
 });
-els.descriptionInput.addEventListener("input", () => markDirty(false));
-els.statusInput.addEventListener("change", () => markDirty(false));
-els.ownerInput.addEventListener("input", () => markDirty(false));
-els.pathInput.addEventListener("input", () => {
-  els.currentPath.textContent = els.pathInput.value;
-  markDirty(false);
-});
-els.contentInput.addEventListener("input", () => {
-  const parsed = parseFrontmatter(els.contentInput.value);
-  state.originalBody = parsed.body;
-  state.bodyEdited = false;
-  markDirty(false);
-});
-document.querySelectorAll("[data-command]").forEach((button) => {
-  button.addEventListener("click", () => applyCommand(button.dataset.command));
-});
-els.viewButtons.forEach((button) => {
-  button.addEventListener("click", () => setView(button.dataset.view));
+[els.titleInput, els.descriptionInput, els.categoryInput, els.statusInput, els.positionInput, els.pathInput].forEach((input) => {
+  input.addEventListener("input", () => {
+    els.currentTitle.textContent = els.titleInput.value || "문서";
+    els.currentPath.textContent = els.pathInput.value || "";
+    markDirty();
+  });
 });
 [
   els.siteTitleInput,
   els.siteTaglineInput,
-  els.siteUrlInput,
   els.siteLogoInput,
-  els.siteFaviconInput,
-  els.siteFooterInput,
-  els.homeBannerImageInput,
   els.homeBannerTitleInput,
   els.homeBannerDescriptionInput,
   els.homeSearchPlaceholderInput,
   els.homeButtonTextInput,
   els.homeButtonLinkInput,
-  els.homeJsonInput,
-].forEach((input) => input.addEventListener("input", markSettingsDirty));
+].forEach((input) => input.addEventListener("input", () => setStatus("설정 수정 중")));
 els.imageUploadButton.addEventListener("click", () => uploadImage().catch((error) => setStatus(error.message, "error")));
-els.documentImageInput.addEventListener("change", () => {
-  const file = els.documentImageInput.files?.[0];
-  uploadDocumentImage(file)
-    .catch((error) => setStatus(error.message, "error"))
-    .finally(() => {
-      els.documentImageInput.value = "";
-    });
-});
 
 boot();

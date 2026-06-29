@@ -1,4 +1,5 @@
-import {github, json, requireEnv, requireSession, triggerDeploy, unauthorized} from "./_utils.js";
+import {json as dbJson, requireDb} from "../_shared/guide-db.js";
+import {requireEnv, requireSession, unauthorized} from "./_utils.js";
 
 const ALLOWED_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "svg"]);
 
@@ -24,64 +25,56 @@ function today() {
 
 export async function onRequestGet({request, env}) {
   const missing = requireEnv(env);
-  if (missing) return json({error: missing}, 500);
+  if (missing) return dbJson({error: missing}, 500);
   if (!(await requireSession(request, env))) return unauthorized();
 
-  let files = [];
-  try {
-    const items = await github(env, "/contents/static/img/uploads");
-    files = Array.isArray(items)
-      ? items
-          .filter((item) => item.type === "file" && ALLOWED_EXTENSIONS.has(item.name.split(".").pop().toLowerCase()))
-          .map((item) => ({
-            name: item.name,
-            path: item.path,
-            url: `/img/uploads/${item.name}`,
-            size: item.size || 0,
-          }))
-      : [];
-  } catch {
-    files = [];
-  }
+  const result = await requireDb(env)
+    .prepare("SELECT id, name, content_type AS contentType, created_at AS createdAt FROM guide_images ORDER BY created_at DESC")
+    .all();
+  const files = (result.results || []).map((item) => ({
+    ...item,
+    url: `/api/guide/image?id=${encodeURIComponent(item.id)}`,
+  }));
 
-  return json({images: files});
+  return dbJson({images: files});
 }
 
 export async function onRequestPost({request, env}) {
   const missing = requireEnv(env);
-  if (missing) return json({error: missing}, 500);
+  if (missing) return dbJson({error: missing}, 500);
   if (!(await requireSession(request, env))) return unauthorized();
 
   const body = await request.json().catch(() => ({}));
   const fileName = safeFileName(body.name);
   const content = String(body.content || "");
+  const contentType = String(body.type || `image/${fileName.ext === "jpg" ? "jpeg" : fileName.ext}`);
 
   if (!fileName.ext) {
-    return json({error: "png, jpg, jpeg, webp, gif, svg 이미지만 업로드할 수 있습니다."}, 400);
+    return dbJson({error: "png, jpg, jpeg, webp, gif, svg 이미지만 업로드할 수 있습니다."}, 400);
   }
 
   if (!content) {
-    return json({error: "업로드할 이미지 파일이 없습니다."}, 400);
+    return dbJson({error: "업로드할 이미지 파일이 없습니다."}, 400);
+  }
+
+  if (content.length > 1000 * 1000) {
+    return dbJson({error: "이미지는 750KB 이하 파일만 업로드해 주세요."}, 400);
   }
 
   const uniqueName = `${today()}-${Date.now()}-${fileName.base}.${fileName.ext}`;
-  const gitPath = `static/img/uploads/${uniqueName}`;
-  const publicUrl = `/img/uploads/${uniqueName}`;
+  const id = crypto.randomUUID();
+  const publicUrl = `/api/guide/image?id=${encodeURIComponent(id)}`;
+  const dataUrl = `data:${contentType};base64,${content}`;
 
-  const result = await github(env, `/contents/${gitPath}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      message: `이미지 업로드: ${uniqueName}`,
-      content,
-      branch: "main",
-    }),
-  });
+  await requireDb(env)
+    .prepare("INSERT INTO guide_images (id, name, content_type, data_url) VALUES (?, ?, ?, ?)")
+    .bind(id, uniqueName, contentType, dataUrl)
+    .run();
 
-  return json({
+  return dbJson({
+    id,
     name: uniqueName,
-    path: gitPath,
     url: publicUrl,
-    sha: result.content?.sha || "",
-    deploy: await triggerDeploy(env),
+    savedAt: new Date().toISOString(),
   });
 }

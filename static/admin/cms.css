@@ -31,7 +31,8 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -166,6 +167,13 @@ body.is-login .cms-main {
   background: #f9fafb;
 }
 
+.cms-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .cms-search {
   display: grid;
   gap: 8px;
@@ -182,6 +190,7 @@ body.is-login .cms-main {
 
 .cms-search input,
 .cms-editor-fields input,
+.cms-editor-fields select,
 .cms-login input {
   width: 100%;
   min-height: 42px;
@@ -195,6 +204,7 @@ body.is-login .cms-main {
 
 .cms-search input:focus,
 .cms-editor-fields input:focus,
+.cms-editor-fields select:focus,
 .cms-login input:focus,
 #content-input:focus {
   border-color: var(--red);
@@ -407,6 +417,108 @@ body.is-login .cms-main {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.6;
+}
+
+.cms-section-head--inline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cms-add-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.cms-add-menu button,
+.cms-block-card__head button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cms-add-menu button:hover,
+.cms-block-card__head button:hover {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: var(--red-dark);
+}
+
+.cms-block-editor {
+  display: grid;
+  gap: 14px;
+}
+
+.cms-block-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.cms-block-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cms-block-card__head strong {
+  font-size: 15px;
+}
+
+.cms-block-card__head div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cms-block-card label {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.cms-block-card label span {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cms-block-card input,
+.cms-block-card textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: var(--text);
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.cms-block-card input:focus,
+.cms-block-card textarea:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(225, 29, 46, 0.12);
+}
+
+.cms-block-card small {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .cms-toolbar {
