@@ -2,6 +2,8 @@ import {
   decodeContent,
   encodeContent,
   github,
+  getDescription,
+  getTitle,
   json,
   requireEnv,
   requireSession,
@@ -19,6 +21,73 @@ function isEditablePath(path) {
 
 function normalizeMdxContent(content) {
   return content.replace(/<!--([\s\S]*?)-->/g, (_match, comment) => `{/*${comment}*/}`);
+}
+
+const CATEGORY_BY_FOLDER = {
+  start: "한눈에 보는 사용법",
+  hospital: "병원·의사 관리",
+  events: "이벤트 관리",
+  ads: "광고 관리",
+  customers: "고객 관리",
+  appointments: "예약 관리",
+  payments: "충전·환불 관리",
+  policy: "운영 정책·의료광고",
+  faq: "FAQ",
+  glossary: "용어 사전",
+};
+
+function docPathToLink(path) {
+  return `/${path.replace(/\.md$/, "")}`;
+}
+
+function getCategoryFromPath(path, home) {
+  const folder = path.split("/")[1] || "";
+  const categoryTitle = CATEGORY_BY_FOLDER[folder] || "한눈에 보는 사용법";
+  return home.categories?.some((category) => category.title === categoryTitle) ? categoryTitle : "한눈에 보는 사용법";
+}
+
+async function syncHomeGuideIndex(env, path, content) {
+  if (!/^docs\/.+\.md$/.test(path)) return null;
+
+  const homePath = "src/data/home.json";
+  const homeData = await github(env, `/contents/${homePath}`);
+  const home = JSON.parse(decodeContent(homeData.content || ""));
+  const link = docPathToLink(path);
+  const title = getTitle(path, content);
+  const description = getDescription(content);
+  const category = getCategoryFromPath(path, home);
+
+  const guide = {
+    title,
+    description,
+    category,
+    link,
+  };
+
+  const guides = Array.isArray(home.guides) ? home.guides : [];
+  const existingIndex = guides.findIndex((item) => item.link === link);
+  if (existingIndex >= 0) guides[existingIndex] = {...guides[existingIndex], ...guide};
+  else guides.push(guide);
+  home.guides = guides;
+
+  if (Array.isArray(home.categories)) {
+    home.categories = home.categories.map((item) => ({
+      ...item,
+      guideCount: guides.filter((guideItem) => guideItem.category === item.title).length,
+    }));
+  }
+
+  const saved = await github(env, `/contents/${homePath}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      message: "메인 검색 목록 자동 갱신",
+      content: encodeContent(`${JSON.stringify(home, null, 2)}\n`),
+      sha: homeData.sha,
+      branch: "main",
+    }),
+  });
+
+  return saved.content?.sha || "";
 }
 
 export async function onRequestGet({request, env}) {
@@ -78,12 +147,14 @@ export async function onRequestPut({request, env}) {
     method: "PUT",
     body: JSON.stringify(payload),
   });
+  const homeSha = await syncHomeGuideIndex(env, path, content);
   const deploy = await triggerDeploy(env);
 
   return json({
     path,
     sha: data.content?.sha || "",
     commit: data.commit?.sha || "",
+    homeSha,
     deploy,
   });
 }
