@@ -66,6 +66,7 @@ function setStatus(message, type = "") {
 
 function deployStatusMessage(savedText, deploy) {
   if (!deploy) return savedText;
+  if (deploy.skipped) return `${savedText} · 변경 없음`;
   if (deploy.triggered) return `${savedText} · 배포 요청됨`;
   return `${savedText} · 자동 배포 설정 필요`;
 }
@@ -676,7 +677,7 @@ async function saveDocument() {
   setLivePreview(path);
   setStatus(
     deployStatusMessage("저장됨 · 공개 화면은 배포 완료 후 갱신돼요", data.deploy),
-    data.deploy?.triggered ? "ok" : "error",
+    data.deploy?.triggered || data.deploy?.skipped ? "ok" : "error",
   );
   await loadDocuments();
 }
