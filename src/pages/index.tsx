@@ -165,24 +165,28 @@ function SearchResults({query}: {query: string}) {
 }
 
 function HeroSection({query, setQuery}: {query: string; setQuery: (value: string) => void}) {
+  const banner = homeData.banners?.[0] || {};
+
   return (
     <section className="guide-hero">
       <div className="home-shell guide-hero__inner">
         <div className="guide-hero__copy">
-          <h1>자신있나 파트너 가이드</h1>
-          <p>입점 후 병원 정보, 이벤트, 광고, 상담, 예약을 어떤 순서로 관리해야 하는지 바로 확인할 수 있어요.</p>
+          <h1>{banner.title || '자신있나 파트너 가이드'}</h1>
+          <p>{banner.description || '입점 후 병원 정보, 이벤트, 광고, 상담, 예약을 어떤 순서로 관리해야 하는지 바로 확인할 수 있어요.'}</p>
           <div className="guide-search">
             <FiSearch aria-hidden="true" />
             <input
               type="text"
-              placeholder="병원 정보, 이벤트 검수, 상담 관리, 광고 잔고 검색"
+              placeholder={banner.searchPlaceholder || '병원 정보, 이벤트 검수, 상담 관리, 광고 잔고 검색'}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
           <SearchResults query={query} />
           <div className="guide-hero__actions">
-            <Link className="button-primary" to="/docs/start/first-day">입점 첫날 가이드</Link>
+            <Link className="button-primary" to={banner.buttonLink || '/docs/start/first-day'}>
+              {banner.buttonText || '입점 첫날 가이드'}
+            </Link>
             <Link className="button-secondary" to="/docs/events/medical-review">의료광고 검수 기준</Link>
           </div>
         </div>
