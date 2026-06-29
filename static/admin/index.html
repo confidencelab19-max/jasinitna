@@ -32,6 +32,7 @@
           <img src="/img/logo.svg" alt="자신있나" />
           <strong>파트너 가이드 관리자</strong>
         </div>
+        <button id="new-doc-button" class="button button-primary sidebar-new" type="button">새 글 작성</button>
         <label class="search">
           <span>문서 검색</span>
           <input id="search-input" type="search" placeholder="제목, 경로 검색" />
@@ -68,6 +69,56 @@
         </section>
       </main>
     </div>
+
+    <section id="new-doc-modal" class="modal" hidden>
+      <form id="new-doc-form" class="modal-card">
+        <header>
+          <strong>새 가이드 작성</strong>
+          <button id="new-doc-close" type="button" aria-label="닫기">×</button>
+        </header>
+        <label>
+          <span>문서 제목</span>
+          <input id="new-doc-title" required placeholder="예: 광고 리포트 확인 방법" />
+        </label>
+        <label>
+          <span>URL 이름</span>
+          <input id="new-doc-slug" required placeholder="예: ad-report-guide" />
+        </label>
+        <label>
+          <span>분류</span>
+          <select id="new-doc-category">
+            <option value="start">한눈에 보는 사용법</option>
+            <option value="hospital">병원·의사 관리</option>
+            <option value="events">이벤트 관리</option>
+            <option value="ads">광고 관리</option>
+            <option value="customers">고객 관리</option>
+            <option value="appointments">예약 관리</option>
+            <option value="payments">충전·환불 관리</option>
+            <option value="policy">운영 정책·의료광고</option>
+            <option value="faq">FAQ</option>
+            <option value="glossary">용어 사전</option>
+          </select>
+        </label>
+        <label>
+          <span>목록 설명</span>
+          <textarea id="new-doc-description" required placeholder="병원 담당자가 목록에서 보고 이해할 한 줄 설명을 입력해요."></textarea>
+        </label>
+        <label>
+          <span>템플릿</span>
+          <select id="new-doc-template">
+            <option value="guide">기본 가이드</option>
+            <option value="process">순서도 가이드</option>
+            <option value="screen">화면 설명 가이드</option>
+            <option value="policy">정책·주의사항 가이드</option>
+          </select>
+        </label>
+        <p id="new-doc-error" class="error-text" role="alert"></p>
+        <footer>
+          <button class="button button-secondary" type="button" id="new-doc-cancel">취소</button>
+          <button class="button button-primary" type="submit">생성</button>
+        </footer>
+      </form>
+    </section>
 
     <script src="/admin/cms.js" defer></script>
   </body>

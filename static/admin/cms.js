@@ -17,6 +17,17 @@ const els = {
   saveButton: document.querySelector("#save-button"),
   revertButton: document.querySelector("#revert-button"),
   openLink: document.querySelector("#open-link"),
+  newDocButton: document.querySelector("#new-doc-button"),
+  newDocModal: document.querySelector("#new-doc-modal"),
+  newDocForm: document.querySelector("#new-doc-form"),
+  newDocClose: document.querySelector("#new-doc-close"),
+  newDocCancel: document.querySelector("#new-doc-cancel"),
+  newDocTitle: document.querySelector("#new-doc-title"),
+  newDocSlug: document.querySelector("#new-doc-slug"),
+  newDocCategory: document.querySelector("#new-doc-category"),
+  newDocDescription: document.querySelector("#new-doc-description"),
+  newDocTemplate: document.querySelector("#new-doc-template"),
+  newDocError: document.querySelector("#new-doc-error"),
   searchInput: document.querySelector("#search-input"),
   documentList: document.querySelector("#document-list"),
   currentTitle: document.querySelector("#current-title"),
@@ -77,6 +88,21 @@ function routeFromPath(path) {
   return `/${String(path || "").replace(/\.md$/, "")}`;
 }
 
+function slugify(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s_-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -99,13 +125,13 @@ function renderDocuments() {
     .join("");
 }
 
-async function loadDocuments() {
-  setStatus("목록 불러오는 중");
+async function loadDocuments(options = {}) {
+  if (!options.silent) setStatus("목록 불러오는 중");
   const data = await api("/api/cms/documents");
   state.documents = data.documents || [];
   renderDocuments();
-  setStatus("대기 중");
-  if (state.documents[0]) await openDocument(state.documents[0].path);
+  if (!options.silent) setStatus("대기 중");
+  if (!state.activePath && state.documents[0]) await openDocument(state.documents[0].path);
 }
 
 function collectTextNodes(doc) {
@@ -225,6 +251,165 @@ async function revertDocument() {
   }
 }
 
+
+
+function openNewDocModal() {
+  els.newDocError.textContent = "";
+  els.newDocForm.reset();
+  els.newDocSlug.value = `guide-${today()}`;
+  els.newDocModal.hidden = false;
+  window.setTimeout(() => els.newDocTitle.focus(), 20);
+}
+
+function closeNewDocModal() {
+  els.newDocModal.hidden = true;
+}
+
+function templateBody(title, description, template) {
+  const safeTitle = title.trim();
+  const safeDescription = description.trim();
+  const commonIntro = `# ${safeTitle}
+
+${safeDescription}
+
+`;
+  if (template === "process") {
+    return `${commonIntro}<div className="guide-flow">
+  <a className="flow-step" href="#step-1"><strong>01</strong><span>시작 전 확인</span><p>담당자가 먼저 확인해야 할 조건을 적어요.</p></a>
+  <a className="flow-step" href="#step-2"><strong>02</strong><span>진행</span><p>실제 화면에서 처리하는 순서를 적어요.</p></a>
+  <a className="flow-step" href="#step-3"><strong>03</strong><span>완료 확인</span><p>저장 후 확인해야 할 결과를 적어요.</p></a>
+</div>
+
+## 처리 순서
+
+1. 첫 번째로 확인할 내용을 작성해요.
+2. 담당자가 입력하거나 선택해야 할 값을 작성해요.
+3. 저장 후 병원이 확인해야 할 상태를 작성해요.
+
+## 자주 놓치는 부분
+
+- 조건, 기간, 노출 상태가 실제 운영 기준과 맞는지 확인해요.
+- 다음 담당자가 이어서 처리할 수 있게 기준을 남겨요.
+`;
+  }
+  if (template === "screen") {
+    return `${commonIntro}<div className="screen-anatomy">
+  <div className="screen-anatomy__part">
+    <strong>화면 위치</strong>
+    <p>파트너센터에서 어느 메뉴로 들어가는지 작성해요.</p>
+  </div>
+  <div className="screen-anatomy__part">
+    <strong>입력 항목</strong>
+    <p>버튼, 입력창, 선택값을 실제 업무 순서대로 작성해요.</p>
+  </div>
+  <div className="screen-anatomy__part">
+    <strong>저장 후 확인</strong>
+    <p>정상 반영 여부를 어디에서 확인하는지 작성해요.</p>
+  </div>
+</div>
+
+## 화면에서 확인해요
+
+첫 문단에는 병원 담당자가 이 화면에서 무엇을 해결할 수 있는지 적어요.
+
+## 입력 기준
+
+- 필수 입력값:
+- 확인해야 할 상태:
+- 반려되기 쉬운 항목:
+`;
+  }
+  if (template === "policy") {
+    return `${commonIntro}<div className="guide-callout">
+  <strong>운영 전 확인해 주세요</strong>
+  <p>이 문서는 병원이 실무에서 지켜야 할 기준을 안내하는 용도예요.</p>
+</div>
+
+## 지켜야 할 기준
+
+- 병원 담당자가 반드시 확인해야 할 기준을 작성해요.
+- 금지되는 표현이나 행동을 구체적으로 작성해요.
+- 수정 요청을 받았을 때 처리 순서를 작성해요.
+
+## 하면 안 되는 행동
+
+- 사실과 다른 내용은 등록하지 않아요.
+- 환자 개인정보나 민감한 자료를 임의로 노출하지 않아요.
+- 의료광고 기준을 벗어나는 표현은 사용하지 않아요.
+
+## 문제가 생겼을 때
+
+문제가 발생하면 어떤 화면을 확인하고 어떤 담당자에게 전달해야 하는지 작성해요.
+`;
+  }
+  return `${commonIntro}## 언제 사용하는 가이드예요
+
+병원 담당자가 이 문서를 언제 확인해야 하는지 작성해요.
+
+## 처리 방법
+
+1. 먼저 확인해야 할 화면이나 조건을 작성해요.
+2. 담당자가 입력하거나 선택해야 할 값을 작성해요.
+3. 저장 후 확인해야 할 결과를 작성해요.
+
+## 확인해 주세요
+
+- 병원 운영 기준과 맞는지 확인해요.
+- 다음 담당자가 이어서 처리할 수 있게 기준을 남겨요.
+- 의료광고 또는 개인정보 기준이 필요한 경우 함께 확인해요.
+`;
+}
+
+function makeDocumentContent({title, description, category, template}) {
+  return `---
+title: ${JSON.stringify(title)}
+description: ${JSON.stringify(description)}
+sidebar_position: 99
+owner: "자신있나 파트너스"
+review_status: "검토 필요"
+reviewed_at: ${today()}
+review_due_at: ""
+---
+
+${templateBody(title, description, template)}`;
+}
+
+async function createNewDocument(event) {
+  event.preventDefault();
+  const title = els.newDocTitle.value.trim();
+  const description = els.newDocDescription.value.trim();
+  const category = els.newDocCategory.value;
+  const slug = slugify(els.newDocSlug.value || title);
+  const template = els.newDocTemplate.value;
+  if (!title || !description || !slug) {
+    els.newDocError.textContent = "제목, URL 이름, 설명을 입력해 주세요.";
+    return;
+  }
+  const path = `docs/${category}/${slug}.md`;
+  const content = makeDocumentContent({title, description, category, template});
+  els.newDocError.textContent = "";
+  setStatus("새 글 생성 중");
+  try {
+    const result = await api("/api/cms/document", {
+      method: "PUT",
+      body: JSON.stringify({
+        path,
+        content,
+        message: `${title} 새 가이드 추가`,
+        sha: "",
+      }),
+    });
+    closeNewDocModal();
+    state.activePath = "";
+    await loadDocuments({silent: true});
+    setStatus(result.deploy?.triggered ? "새 글 생성됨 · 배포 후 URL이 열려요" : "새 글 생성됨 · 배포 설정 확인 필요", result.deploy?.triggered ? "ok" : "error");
+  } catch (error) {
+    els.newDocError.textContent = error.message;
+    setStatus("새 글 생성 실패", "error");
+  }
+}
+
+
 els.loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   els.loginError.textContent = "";
@@ -253,6 +438,17 @@ els.documentList.addEventListener("click", (event) => {
   if (item) openDocument(item.dataset.path);
 });
 
+els.newDocButton.addEventListener("click", openNewDocModal);
+els.newDocClose.addEventListener("click", closeNewDocModal);
+els.newDocCancel.addEventListener("click", closeNewDocModal);
+els.newDocForm.addEventListener("submit", createNewDocument);
+els.newDocTitle.addEventListener("input", () => {
+  if (!els.newDocSlug.dataset.touched) els.newDocSlug.value = slugify(els.newDocTitle.value);
+});
+els.newDocSlug.addEventListener("input", () => {
+  els.newDocSlug.dataset.touched = "true";
+  els.newDocSlug.value = slugify(els.newDocSlug.value);
+});
 els.searchInput.addEventListener("input", renderDocuments);
 els.saveButton.addEventListener("click", saveDocument);
 els.revertButton.addEventListener("click", revertDocument);

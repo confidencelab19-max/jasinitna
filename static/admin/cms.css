@@ -75,3 +75,70 @@ input:focus, textarea:focus { border-color: var(--red); box-shadow: 0 0 0 3px rg
   .visual-editor { grid-template-columns: 1fr; grid-template-rows: minmax(420px, 58vh) minmax(320px, 1fr); }
   .preview-pane { border-right: 0; border-bottom: 1px solid var(--line); }
 }
+
+
+.sidebar-new {
+  width: calc(100% - 8px);
+  margin: 0 4px;
+}
+
+select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  outline: none;
+  font: inherit;
+}
+
+select:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(225, 29, 46, .12);
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, .42);
+}
+
+.modal-card {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .18);
+}
+
+.modal-card header,
+.modal-card footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.modal-card header strong {
+  font-size: 18px;
+}
+
+.modal-card header button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: #344054;
+  font-size: 20px;
+  line-height: 1;
+}
