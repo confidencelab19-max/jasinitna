@@ -23,6 +23,15 @@ function normalizeMdxContent(content) {
   return content.replace(/<!--([\s\S]*?)-->/g, (_match, comment) => `{/*${comment}*/}`);
 }
 
+function skippedDeploy(reason) {
+  return {
+    skipped: true,
+    triggered: false,
+    status: 204,
+    reason,
+  };
+}
+
 const CATEGORY_BY_FOLDER = {
   start: "한눈에 보는 사용법",
   hospital: "병원·의사 관리",
@@ -126,14 +135,33 @@ export async function onRequestPut({request, env}) {
   }
 
   let sha = String(body.sha || "");
+  let existingContent = "";
 
   if (!sha) {
     try {
       const existing = await github(env, `/contents/${encodeURIComponent(path).replace(/%2F/g, "/")}`);
       sha = existing.sha;
+      existingContent = decodeContent(existing.content || "");
     } catch {
       sha = "";
     }
+  } else {
+    try {
+      const existing = await github(env, `/contents/${encodeURIComponent(path).replace(/%2F/g, "/")}`);
+      existingContent = decodeContent(existing.content || "");
+    } catch {
+      existingContent = "";
+    }
+  }
+
+  if (existingContent && existingContent === content) {
+    return json({
+      path,
+      sha,
+      commit: "",
+      homeSha: null,
+      deploy: skippedDeploy("변경된 내용이 없어 새 배포를 만들지 않았습니다."),
+    });
   }
 
   const payload = {
