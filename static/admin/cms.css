@@ -707,6 +707,15 @@ body.is-login .cms-main {
   line-height: 1.8;
 }
 
+.cms-live-preview {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 139px);
+  min-height: 640px;
+  border: 0;
+  background: #ffffff;
+}
+
 .cms-preview h1 {
   margin: 0 0 10px;
   font-size: 28px;
