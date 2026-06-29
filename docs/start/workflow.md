@@ -7,7 +7,6 @@ review_status: "게시 가능"
 reviewed_at: 2026-06-27
 review_due_at: 2026-12-27
 ---
-
 # 자신있나 운영 흐름 이해하기
 
 <div className="guide-visual guide-visual--start">
