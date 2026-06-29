@@ -165,7 +165,7 @@ function setView(view) {
 }
 
 async function loadBootstrap() {
-  const data = await api("/api/guide/bootstrap");
+  const data = await api("/api/cms/bootstrap");
   state.categories = data.categories || [];
   renderCategoryOptions();
 }
