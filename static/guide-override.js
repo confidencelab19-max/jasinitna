@@ -30,10 +30,8 @@
     if (!root || !cachedPatches.size) return false;
     const nodes = collectTextNodes(root);
     nodes.forEach((node, index) => {
-      const key = `t:${index}`;
-      if (cachedPatches.has(key) && node.nodeValue !== cachedPatches.get(key)) {
-        node.nodeValue = cachedPatches.get(key);
-      }
+      const next = cachedPatches.get(`t:${index}`);
+      if (typeof next === "string" && node.nodeValue !== next) node.nodeValue = next;
     });
     const title = root.querySelector("h1")?.textContent?.trim();
     if (title) {
@@ -55,11 +53,7 @@
       const data = await res.json();
       cachedPatches = new Map((data.patches || []).map((patch) => [patch.key, patch.text]));
       if (!cachedPatches.size) return;
-      applyPatches();
-      [100, 400, 900, 1800, 3200].forEach((delay) => window.setTimeout(applyPatches, delay));
-      const observer = new MutationObserver(applyPatches);
-      observer.observe(document.body, {childList: true, subtree: true, characterData: true});
-      window.setTimeout(() => observer.disconnect(), 6000);
+      [0, 120, 350, 800, 1500, 2600, 4200].forEach((delay) => window.setTimeout(applyPatches, delay));
     } catch {}
   }
 
