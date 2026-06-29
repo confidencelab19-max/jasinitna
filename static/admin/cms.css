@@ -462,6 +462,11 @@ body.is-login .cms-main {
   box-shadow: 0 0 0 3px rgba(225, 29, 46, 0.12);
 }
 
+.cms-rich-editor.is-locked {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
 .cms-rich-editor h2,
 .cms-preview h2 {
   margin: 30px 0 12px;
