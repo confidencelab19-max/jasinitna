@@ -605,6 +605,8 @@ async function openDocument(path) {
   state.bodyEdited = false;
   state.dirty = false;
   const isDesignDocument = hasDesignMdx(parsed.body);
+  const editPanel = els.bodyEditor.closest(".cms-edit-panel");
+  editPanel.classList.toggle("is-source-mode", isDesignDocument);
 
   els.pathInput.value = data.path;
   els.titleInput.value = parsed.fields.title || getTitleFromMarkdown(data.path, data.content);
@@ -616,13 +618,7 @@ async function openDocument(path) {
   els.bodyEditor.contentEditable = isDesignDocument ? "false" : "true";
   els.bodyEditor.classList.toggle("is-locked", isDesignDocument);
   if (isDesignDocument) {
-    els.bodyEditor.innerHTML = `
-      <blockquote class="cms-note-block">
-        이 문서는 화면 목업, 표, 디자인 박스가 포함된 문서예요. 병원 페이지와 다르게 보이지 않도록 아래의 “실제 저장 원문”에서 수정해요.
-      </blockquote>
-      <p>문서 제목, 목록 설명, 검토 상태는 위 입력칸에서 바로 수정할 수 있어요.</p>
-      <p>본문 문장을 바꿀 때는 아래 원문에서 원하는 문장을 검색해서 수정한 뒤 저장해요.</p>
-    `;
+    els.bodyEditor.innerHTML = "";
     els.contentInput.closest("details").open = true;
   } else {
     els.bodyEditor.innerHTML = markdownToHtml(simplifyMdx(parsed.body));
@@ -706,6 +702,7 @@ function createNewDocument() {
   state.originalBody = "";
   state.bodyEdited = true;
   state.dirty = true;
+  els.bodyEditor.closest(".cms-edit-panel").classList.remove("is-source-mode");
 
   els.pathInput.value = `docs/start/new-guide-${today}.md`;
   els.titleInput.value = "새 가이드 문서";
