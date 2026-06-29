@@ -34,6 +34,7 @@ const els = {
   ownerInput: document.querySelector("#owner-input"),
   bodyEditor: document.querySelector("#body-editor"),
   previewOutput: document.querySelector("#preview-output"),
+  livePreviewFrame: document.querySelector("#live-preview-frame"),
   documentImageInput: document.querySelector("#document-image-input"),
   viewButtons: document.querySelectorAll("[data-view]"),
   documentsView: document.querySelector("#documents-view"),
@@ -308,6 +309,20 @@ function htmlToMarkdown(root) {
 function getTitleFromMarkdown(path, content) {
   const {fields} = parseFrontmatter(content);
   return fields.title || path.split("/").pop().replace(/\.md$/, "");
+}
+
+function docPathToUrl(path) {
+  if (!path || !path.startsWith("docs/")) return "";
+  return `/${path.replace(/\.md$/, "")}`;
+}
+
+function setLivePreview(path) {
+  const url = docPathToUrl(path);
+  if (!url) {
+    els.livePreviewFrame.removeAttribute("src");
+    return;
+  }
+  els.livePreviewFrame.src = `${url}?cmsPreview=${Date.now()}`;
 }
 
 function renderDocuments() {
@@ -615,6 +630,7 @@ async function openDocument(path) {
   }
   els.currentTitle.textContent = els.titleInput.value;
   els.currentPath.textContent = data.path;
+  setLivePreview(data.path);
 
   renderDocuments();
   refreshPreview();
@@ -661,7 +677,11 @@ async function saveDocument() {
   state.dirty = false;
   els.currentTitle.textContent = els.titleInput.value;
   els.currentPath.textContent = path;
-  setStatus(deployStatusMessage("저장됨", data.deploy), data.deploy?.triggered ? "ok" : "error");
+  setLivePreview(path);
+  setStatus(
+    deployStatusMessage("저장됨 · 공개 화면은 배포 완료 후 갱신돼요", data.deploy),
+    data.deploy?.triggered ? "ok" : "error",
+  );
   await loadDocuments();
 }
 
@@ -697,6 +717,7 @@ function createNewDocument() {
   els.contentInput.value = composeContent();
   els.currentTitle.textContent = els.titleInput.value;
   els.currentPath.textContent = els.pathInput.value;
+  els.livePreviewFrame.removeAttribute("src");
   refreshPreview();
   renderDocuments();
   setStatus("작성 중");
